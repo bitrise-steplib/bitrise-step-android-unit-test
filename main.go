@@ -18,6 +18,7 @@ import (
 type Configs struct {
 	ProjectLocation   string `env:"project_location,required"`
 	ReportPathPattern string `env:"report_path_pattern"`
+	ResultPathPattern string `env:"result_path_pattern"`
 	Variant           string `env:"variant"`
 	Module            string `env:"module"`
 }
@@ -127,6 +128,47 @@ func main() {
 
 		if err := report.ExportZIP(deployDir); err != nil {
 			log.Warnf("failed to export report (%s), error: %v", report.Path, err)
+			continue
+		}
+	}
+
+	fmt.Println()
+
+	log.Infof("Export results:")
+	fmt.Println()
+
+	results, err := gradleProject.FindDirs(started, config.ResultPathPattern, true)
+	if err != nil {
+		failf("failed to find results, error: %v", err)
+	}
+
+	if len(results) == 0 {
+		log.Warnf("No results found with pattern: %s", config.ResultPathPattern)
+		log.Warnf("If you have changed default report export path in your gradle files then you might need to change ResultPathPattern accordingly.")
+		os.Exit(0)
+	}
+
+	for _, result := range results {
+		result.Name += ".zip"
+
+		exists, err := pathutil.IsPathExists(filepath.Join(deployDir, result.Name))
+		if err != nil {
+			failf("failed to check path, error: %v", err)
+		}
+
+		artifactName := filepath.Base(result.Path)
+
+		if exists {
+			timestamp := time.Now().Format("20060102150405")
+			ext := filepath.Ext(result.Name)
+			name := strings.TrimSuffix(filepath.Base(result.Name), ext)
+			result.Name = fmt.Sprintf("%s-%s%s", name, timestamp, ext)
+		}
+
+		log.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", artifactName, result.Name)
+
+		if err := result.ExportZIP(deployDir); err != nil {
+			log.Warnf("failed to export result (%s), error: %v", result.Path, err)
 			continue
 		}
 	}

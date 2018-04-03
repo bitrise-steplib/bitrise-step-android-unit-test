@@ -48,8 +48,15 @@ inputs:
       is_required: false
   - report_path_pattern: "*build/reports"
     opts:
-      category: Report Export Options
+      category: Export Options
       title: Report location pattern
       summary: Will find the report dir with the given pattern.
       description: Will find the report dir with the given pattern.
+      is_required: true
+  - result_path_pattern: "*build/test-results"
+    opts:
+      category: Export Options
+      title: Test results location pattern
+      summary: Will find the test-results dir with the given pattern.
+      description: Will find test-results dir with the given pattern.
       is_required: true
