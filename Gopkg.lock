@@ -12,7 +12,8 @@
     "parseutil",
     "pathutil",
     "pointers",
-    "sliceutil"
+    "sliceutil",
+    "ziputil"
   ]
   revision = "b33f6bcef9b50045d7e62364b354584afc3ee329"
 
@@ -20,15 +21,12 @@
   branch = "master"
   name = "github.com/bitrise-tools/go-android"
   packages = ["gradle"]
-  revision = "2d468956763b7a87866dc4d2ea715970a88dda05"
+  revision = "926dbb2d85c3378c84c282884d1310c4287a8da8"
 
 [[projects]]
   branch = "master"
   name = "github.com/bitrise-tools/go-steputils"
-  packages = [
-    "stepconf",
-    "tools"
-  ]
+  packages = ["stepconf"]
   revision = "d4d9e08cc4347e8784bb18419fcdceb932e17019"
 
 [[projects]]
@@ -40,6 +38,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e22b429a81ff8bb8b5ad960eabcf03624b72ae6e4bb09a614e96461527723b17"
+  inputs-digest = "0bf6ee014103ddba75ac2819e4fbfb2dbaa48e1b9fa05cdd643d11cdd34901e6"
   solver-name = "gps-cdcl"
   solver-version = 1

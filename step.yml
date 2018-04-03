@@ -46,7 +46,7 @@ inputs:
       description: |
         Set the variant that you want to build. To see your available variants please open your project in Android Studio and go in [Project Structure] -> variants section.
       is_required: false
-  - report_path_pattern: "*/build/outputs/apk/*.apk"
+  - report_path_pattern: "*build/reports"
     opts:
       category: Report Export Options
       title: Report location pattern

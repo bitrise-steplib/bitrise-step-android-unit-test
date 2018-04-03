@@ -99,6 +99,29 @@ func (proj Project) FindArtifacts(generatedAfter time.Time, pattern string, incl
 	})
 }
 
+// FindDirs ...
+func (proj Project) FindDirs(generatedAfter time.Time, pattern string, includeModuleInName bool) ([]Artifact, error) {
+	var a []Artifact
+	return a, filepath.Walk(proj.location, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Warnf("failed to walk path: %s", err)
+			return nil
+		}
+
+		if info.ModTime().Before(generatedAfter) || !info.IsDir() || !glob.Glob(pattern, path) {
+			return nil
+		}
+
+		name, err := proj.extractArtifactName(path, includeModuleInName)
+		if err != nil {
+			return err
+		}
+
+		a = append(a, Artifact{Name: name, Path: path})
+		return nil
+	})
+}
+
 func (proj Project) extractArtifactName(path string, includeModuleInName bool) (string, error) {
 	relPath, err := filepath.Rel(proj.location, path)
 	if err != nil {
