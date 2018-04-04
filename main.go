@@ -51,7 +51,7 @@ func main() {
 		GetModule(config.Module).
 		GetTask("test")
 
-	log.Infof("Variants: ")
+	log.Infof("Variants:")
 	fmt.Println()
 
 	variants, err := testTask.GetVariants()
