@@ -7,7 +7,7 @@ app:
   - BITRISE_STEP_VERSION: "0.9.0"
   - BITRISE_STEP_GIT_CLONE_URL: https://github.com/bitrise-steplib/bitrise-step-android-unit-test.git
   - MY_STEPLIB_REPO_FORK_GIT_URL: $MY_STEPLIB_REPO_FORK_GIT_URL
-  - SIMPLE_REPO_GIT_CLONE_URL: https://github.com/bitrise-samples/android-multiple-test-results-sample.git
+  - SAMPLE_REPO_GIT_CLONE_URL: https://github.com/bitrise-samples/android-multiple-test-results-sample.git
 
 workflows:
   test:
@@ -21,7 +21,7 @@ workflows:
     - check-artifacts
 
   test-in-src-dir:
-    title: Test simple android project & mono repo projects in source dir
+    title: Test android project & mono repo projects in source dir
     steps:
     - script:
         inputs:
@@ -34,12 +34,12 @@ workflows:
         - is_create_path: true
     - script:
         inputs:
-        - content: git clone -b no-failures $SIMPLE_REPO_GIT_CLONE_URL .
+        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL .
     - path::./:
         title: Test simple android project
 
   test-in-root-tmp-dir:
-    title: Test simple android project & mono repo projects in /tmp dir
+    title: Test android project & mono repo projects in /tmp dir
     steps:
     - script:
         inputs:
@@ -52,7 +52,7 @@ workflows:
         - is_create_path: true
     - script:
         inputs:
-        - content: git clone -b no-failures $SIMPLE_REPO_GIT_CLONE_URL .
+        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL .
     - path::./:
         title: Test simple repo
     
@@ -111,7 +111,6 @@ workflows:
             #!/usr/bin/env bash
             set -ex
             go get -u -v github.com/kisielk/errcheck
-            go get -u -v github.com/stretchr/testify/require
             errcheck -asserts=true -blank=true $GOLIST_WITHOUT_VENDOR
     - script:
         title: Go lint
