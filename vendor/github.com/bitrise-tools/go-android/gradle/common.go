@@ -17,6 +17,7 @@ var conflicts = map[string][]string{
 
 func getGradleOutput(projPath string, tasks ...string) (string, error) {
 	c := command.New(filepath.Join(projPath, "gradlew"), tasks...)
+	c.SetDir(projPath)
 	return c.RunAndReturnTrimmedCombinedOutput()
 }
 

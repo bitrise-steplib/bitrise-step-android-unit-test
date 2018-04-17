@@ -21,7 +21,7 @@
   branch = "master"
   name = "github.com/bitrise-tools/go-android"
   packages = ["gradle"]
-  revision = "926dbb2d85c3378c84c282884d1310c4287a8da8"
+  revision = "0a629e2052d4dbb9c079d2abd596e418818d7306"
 
 [[projects]]
   branch = "master"

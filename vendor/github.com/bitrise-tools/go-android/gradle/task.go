@@ -13,7 +13,7 @@ type Task struct {
 
 // GetVariants ...
 func (task *Task) GetVariants() (Variants, error) {
-	tasksOutput, err := getGradleOutput(task.module.project.location, task.module.name+"tasks")
+	tasksOutput, err := getGradleOutput(task.module.project.location, task.module.name+"tasks", "--all")
 	if err != nil {
 		return nil, fmt.Errorf("%s, %s", tasksOutput, err)
 	}
