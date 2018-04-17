@@ -12,35 +12,31 @@ app:
 workflows:
   test:
     title: Test simple android project & mono repo projects
-    # before_run:
-    # - audit-this-step
-    # - go-tests
+    before_run:
+    - audit-this-step
+    - go-tests
     after_run:
     - test-in-src-dir
-    # - test-in-root-tmp-dir
-    # - check-artifacts
+    - test-in-root-tmp-dir
+    - check-artifacts
 
   test-in-src-dir:
     title: Test android project & mono repo projects in source dir
     steps:
-    # - script:
-    #     inputs:
-    #     - content: rm -rf _tmp
+    - script:
+        inputs:
+        - content: rm -rf _tmp
     - change-workdir:
         title: cd $BITRISE_SOURCE_DIR/_tmp
         run_if: true
         inputs:
         - path: ./_tmp
         - is_create_path: true
-    # - script:
-    #     inputs:
-    #     - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL .
+    - script:
+        inputs:
+        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL .
     - path::./:
         title: Test simple android project
-        inputs:
-        - project_location: /Users/tamaspapik/Develop/android/test-ui-test
-        - module: app_copy
-        - variant: SmallFckinlarge
 
   test-in-root-tmp-dir:
     title: Test android project & mono repo projects in /tmp dir
