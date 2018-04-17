@@ -38,6 +38,12 @@ lines:
 		}
 		l = strings.Split(l, " ")[0]
 		// l: "lintMyflavorokStaging"
+
+		split := strings.Split(l, ":")
+		if len(split) > 1 {
+			l = split[1]
+		}
+		// module removed if any
 		if strings.HasPrefix(l, task.name) {
 			// task.name: "lint"
 			// strings.HasPrefix will match lint and lintVital prefix also, we won't need lintVital so it is a conflict
@@ -51,6 +57,9 @@ lines:
 			// l: "MyflavorokStaging"
 			if l == "" {
 				continue
+			}
+			if len(split) > 1 {
+				l = split[0] + ":" + l
 			}
 			tasks = append(tasks, l)
 		}

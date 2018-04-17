@@ -60,18 +60,41 @@ func main() {
 	}
 
 	filteredVariants := variants.Filter(config.Variant)
+	var cleanedVariants gradle.Variants
+	if config.Module != "" {
+		cleanedVariants = filteredVariants
+		for _, variant := range variants {
+			if sliceutil.IsStringInSlice(variant, filteredVariants) {
+				log.Donef("✓ %s", strings.TrimSuffix(variant, "UnitTest"))
+			} else {
+				log.Printf("- %s", strings.TrimSuffix(variant, "UnitTest"))
+			}
+		}
+	} else {
+		moduleVariants := map[string][]string{}
+		for _, variant := range variants {
+			split := strings.Split(variant, ":")
+			if len(split) > 1 {
+				moduleVariants[split[0]] = append(moduleVariants[split[0]], split[1])
+			}
+		}
 
-	for _, variant := range variants {
-		if sliceutil.IsStringInSlice(variant, filteredVariants) {
-			log.Donef("✓ %s", variant)
-		} else {
-			log.Printf("- %s", variant)
+		for module, variants := range moduleVariants {
+			log.Printf("%s:", module)
+			for _, variant := range variants {
+				if sliceutil.IsStringInSlice(module+":"+variant, filteredVariants) {
+					cleanedVariants = append(cleanedVariants, variant)
+					log.Donef("✓ %s", strings.TrimSuffix(variant, "UnitTest"))
+				} else {
+					log.Printf("- %s", strings.TrimSuffix(variant, "UnitTest"))
+				}
+			}
 		}
 	}
 
 	fmt.Println()
 
-	if len(filteredVariants) == 0 {
+	if len(cleanedVariants) == 0 {
 		errMsg := fmt.Sprintf("No variant matching for: (%s)", config.Variant)
 		if config.Module != "" {
 			errMsg += fmt.Sprintf(" in module: [%s]", config.Module)
@@ -87,7 +110,7 @@ func main() {
 	started := time.Now()
 
 	log.Infof("Run test:")
-	testErr := testTask.Run(filteredVariants)
+	testErr := testTask.Run(cleanedVariants)
 	if testErr != nil {
 		log.Errorf("Test task failed, error: %v", testErr)
 	}
