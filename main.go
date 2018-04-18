@@ -40,12 +40,12 @@ func getArtifacts(gradleProject gradle.Project, started time.Time, pattern strin
 		}
 		if len(artifacts) == 0 {
 			if t == started {
-				log.Warnf("No reports found with pattern: %s that has modification time after: %s", pattern, t)
+				log.Warnf("No artifacts found with pattern: %s that has modification time after: %s", pattern, t)
 				log.Warnf("Retrying without modtime check....")
 				fmt.Println()
 				continue
 			}
-			log.Warnf("No reports found with pattern: %s without modtime check", pattern)
+			log.Warnf("No artifacts found with pattern: %s without modtime check", pattern)
 			log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
 		}
 	}
@@ -80,19 +80,6 @@ func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
 	return nil
 }
 
-func getModuleMap(config Configs, variants gradle.Variants) map[string][]string {
-	moduleVariants := map[string][]string{}
-	for _, variant := range variants {
-		split := strings.Split(variant, ":")
-		if len(split) > 1 {
-			moduleVariants[split[0]] = append(moduleVariants[split[0]], split[1])
-		} else {
-			moduleVariants[config.Module] = append(moduleVariants[config.Module], variant)
-		}
-	}
-	return moduleVariants
-}
-
 func main() {
 	var config Configs
 
@@ -124,21 +111,12 @@ func main() {
 		failf("Failed to fetch variants, error: %s", err)
 	}
 
-	filteredVariants := variants.Filter(config.Variant)
-	moduleMap := getModuleMap(config, variants)
+	filteredVariants := variants.Filter(config.Module, config.Variant)
 
-	if len(filteredVariants) == 0 {
-		errMsg := fmt.Sprintf("No variant matching for: (%s)", config.Variant)
-		if config.Module != "" {
-			errMsg += fmt.Sprintf(" in module: [%s]", config.Module)
-		}
-		failf(errMsg)
-	}
-
-	for module, variants := range moduleMap {
+	for module, variants := range variants {
 		log.Printf("%s:", module)
 		for _, variant := range variants {
-			if sliceutil.IsStringInSlice(module+":"+variant, filteredVariants) || sliceutil.IsStringInSlice(variant, filteredVariants) {
+			if sliceutil.IsStringInSlice(variant, filteredVariants[module]) {
 				log.Donef("✓ %s", strings.TrimSuffix(variant, "UnitTest"))
 			} else {
 				log.Printf("- %s", strings.TrimSuffix(variant, "UnitTest"))
@@ -147,9 +125,15 @@ func main() {
 	}
 	fmt.Println()
 
-	if config.Variant == "" {
-		log.Warnf("No variant specified, test will run on all variants")
-		fmt.Println()
+	if len(filteredVariants) == 0 {
+		if config.Variant != "" {
+			if config.Module == "" {
+				failf("Variant (%s) not found in any module", config.Variant)
+			} else {
+				failf("No variant matching for (%s) in module: [%s]", config.Variant, config.Module)
+			}
+		}
+		failf("Module not found: %s", config.Module)
 	}
 
 	started := time.Now()
@@ -162,11 +146,9 @@ func main() {
 	var testErr error
 
 	log.Infof("Run test:")
-	for module, variants := range moduleMap {
-		testErr = gradleProject.GetModule(module).GetTask("test").Run(variants, args...)
-		if testErr != nil {
-			log.Errorf("Test task failed, error: %v", testErr)
-		}
+	testErr = testTask.Run(filteredVariants, args...)
+	if testErr != nil {
+		log.Errorf("Test task failed, error: %v", testErr)
 	}
 	fmt.Println()
 
