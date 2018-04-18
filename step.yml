@@ -46,16 +46,23 @@ inputs:
       description: |
         Set the variant that you want to test. To see your available variants please open your project in Android Studio and go in [Project Structure] -> variants section.
       is_required: false
+  - arguments:
+    opts:
+      category: Options
+      title: Additional Gradle Arguments 
+      summary: Extra arguments passed to the gradle task
+      description: Extra arguments passed to the gradle task
+      is_required: false
   - report_path_pattern: "*build/reports"
     opts:
-      category: Export Options
+      category: Options
       title: Report location pattern
       summary: Will find the report dir with the given pattern.
       description: Will find the report dir with the given pattern.
       is_required: true
   - result_path_pattern: "*build/test-results"
     opts:
-      category: Export Options
+      category: Options
       title: Test results location pattern
       summary: Will find the test-results dir with the given pattern.
       description: Will find test-results dir with the given pattern.

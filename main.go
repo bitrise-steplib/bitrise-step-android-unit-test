@@ -12,6 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/sliceutil"
 	"github.com/bitrise-tools/go-android/gradle"
 	"github.com/bitrise-tools/go-steputils/stepconf"
+	shellquote "github.com/kballard/go-shellquote"
 )
 
 // Configs ...
@@ -21,6 +22,7 @@ type Configs struct {
 	ResultPathPattern string `env:"result_path_pattern"`
 	Variant           string `env:"variant"`
 	Module            string `env:"module"`
+	Arguments         string `env:"arguments"`
 }
 
 func failf(f string, args ...interface{}) {
@@ -109,8 +111,13 @@ func main() {
 
 	started := time.Now()
 
+	args, err := shellquote.Split(config.Arguments)
+	if err != nil {
+		failf("Failed to parse arguments, error: %s", err)
+	}
+
 	log.Infof("Run test:")
-	testErr := testTask.Run(cleanedVariants)
+	testErr := testTask.Run(cleanedVariants, args...)
 	if testErr != nil {
 		log.Errorf("Test task failed, error: %v", testErr)
 	}
@@ -119,15 +126,24 @@ func main() {
 	log.Infof("Export reports:")
 	fmt.Println()
 
-	reports, err := gradleProject.FindDirs(started, config.ReportPathPattern, true)
-	if err != nil {
-		failf("failed to find reports, error: %v", err)
-	}
+	var reports []gradle.Artifact
 
-	if len(reports) == 0 {
-		log.Warnf("No reports found with pattern: %s", config.ReportPathPattern)
-		log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
-		os.Exit(0)
+	for _, t := range []time.Time{started, time.Time{}} {
+		reports, err = gradleProject.FindDirs(t, config.ReportPathPattern, true)
+		if err != nil {
+			failf("failed to find reports, error: %v", err)
+		}
+
+		if len(reports) == 0 {
+			if t == started {
+				log.Warnf("No reports found with pattern: %s that has modification time after: %s", config.ReportPathPattern, t)
+				log.Warnf("Retrying without modtime check....")
+				fmt.Println()
+			} else {
+				log.Warnf("No reports found with pattern: %s without modtime check", config.ReportPathPattern)
+				log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
+			}
+		}
 	}
 
 	for _, report := range reports {
@@ -160,15 +176,23 @@ func main() {
 	log.Infof("Export results:")
 	fmt.Println()
 
-	results, err := gradleProject.FindDirs(started, config.ResultPathPattern, true)
-	if err != nil {
-		failf("failed to find results, error: %v", err)
-	}
+	var results []gradle.Artifact
+	for _, t := range []time.Time{started, time.Time{}} {
+		results, err = gradleProject.FindDirs(t, config.ResultPathPattern, true)
+		if err != nil {
+			failf("failed to find results, error: %v", err)
+		}
 
-	if len(results) == 0 {
-		log.Warnf("No results found with pattern: %s", config.ResultPathPattern)
-		log.Warnf("If you have changed default report export path in your gradle files then you might need to change ResultPathPattern accordingly.")
-		os.Exit(0)
+		if len(results) == 0 {
+			if t == started {
+				log.Warnf("No results found with pattern: %s that has modification time after: %s", config.ResultPathPattern, t)
+				log.Warnf("Retrying without modtime check....")
+				fmt.Println()
+			} else {
+				log.Warnf("No results found with pattern: %s without modtime check", config.ResultPathPattern)
+				log.Warnf("If you have changed default report export path in your gradle files then you might need to change ResultPathPattern accordingly.")
+			}
+		}
 	}
 
 	for _, result := range results {

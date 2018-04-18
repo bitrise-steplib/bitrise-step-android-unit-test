@@ -58,6 +58,8 @@ lines:
 			if l == "" {
 				continue
 			}
+
+			//modules put back
 			if len(split) > 1 {
 				l = split[0] + ":" + l
 			}
@@ -68,10 +70,10 @@ lines:
 }
 
 // Run ...
-func (task *Task) Run(variants Variants) error {
+func (task *Task) Run(variants Variants, additionalArgs ...string) error {
 	var args []string
 	for _, variant := range variants {
 		args = append(args, task.module.name+task.name+variant)
 	}
-	return runGradleCommand(task.module.project.location, args...)
+	return runGradleCommand(task.module.project.location, append(args, additionalArgs...)...)
 }

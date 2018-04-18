@@ -30,6 +30,12 @@
   revision = "d4d9e08cc4347e8784bb18419fcdceb932e17019"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/kballard/go-shellquote"
+  packages = ["."]
+  revision = "cd60e84ee657ff3dc51de0b4f55dd299a3e136f2"
+
+[[projects]]
   name = "github.com/ryanuber/go-glob"
   packages = ["."]
   revision = "572520ed46dbddaed19ea3d9541bdd0494163693"
@@ -38,6 +44,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0bf6ee014103ddba75ac2819e4fbfb2dbaa48e1b9fa05cdd643d11cdd34901e6"
+  inputs-digest = "d636782bd7ade250f2e431f6999fc5af64a308e501e05209f8ffd203bab57984"
   solver-name = "gps-cdcl"
   solver-version = 1
