@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/sliceutil"
+	"github.com/bitrise-steplib/bitrise-step-android-unit-test/androidcache"
 	"github.com/bitrise-tools/go-android/gradle"
 	"github.com/bitrise-tools/go-steputils/stepconf"
 	shellquote "github.com/kballard/go-shellquote"
@@ -23,6 +24,7 @@ type Configs struct {
 	Variant           string `env:"variant"`
 	Module            string `env:"module"`
 	Arguments         string `env:"arguments"`
+	CacheLevel        string `env:"cache_level,opt[none,only_deps,all]"`
 }
 
 func failf(f string, args ...interface{}) {
@@ -223,4 +225,11 @@ func main() {
 	if testErr != nil {
 		os.Exit(1)
 	}
+
+	fmt.Println()
+	log.Infof("Collecting cache:")
+	if warning := androidcache.Collect(config.ProjectLocation, androidcache.Level(config.CacheLevel)); warning != nil {
+		log.Warnf("%s", warning)
+	}
+	log.Donef("  Done")
 }
