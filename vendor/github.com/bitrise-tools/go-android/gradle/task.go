@@ -36,8 +36,8 @@ lines:
 		if l == "" {
 			continue
 		}
-		l = strings.Split(l, " ")[0]
 		// l: "lintMyflavorokStaging"
+		l = strings.Split(l, " ")[0]
 
 		split := strings.Split(l, ":")
 		if len(split) > 1 {
@@ -70,10 +70,10 @@ lines:
 }
 
 // Run ...
-func (task *Task) Run(variants Variants, additionalArgs ...string) error {
-	var args []string
+func (task *Task) Run(variants Variants, args ...string) error {
+	var a []string
 	for _, variant := range variants {
-		args = append(args, task.module.name+task.name+variant)
+		a = append(a, task.module.name+task.name+variant)
 	}
-	return runGradleCommand(task.module.project.location, append(args, additionalArgs...)...)
+	return runGradleCommand(task.module.project.location, append(a, args...)...)
 }

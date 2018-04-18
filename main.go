@@ -10,7 +10,7 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/sliceutil"
-	"github.com/bitrise-steplib/bitrise-step-android-unit-test/androidcache"
+	"github.com/bitrise-steplib/bitrise-step-android-unit-test/cache"
 	"github.com/bitrise-tools/go-android/gradle"
 	"github.com/bitrise-tools/go-steputils/stepconf"
 	shellquote "github.com/kballard/go-shellquote"
@@ -128,24 +128,9 @@ func main() {
 	log.Infof("Export reports:")
 	fmt.Println()
 
-	var reports []gradle.Artifact
-
-	for _, t := range []time.Time{started, time.Time{}} {
-		reports, err = gradleProject.FindDirs(t, config.ReportPathPattern, true)
-		if err != nil {
-			failf("failed to find reports, error: %v", err)
-		}
-
-		if len(reports) == 0 {
-			if t == started {
-				log.Warnf("No reports found with pattern: %s that has modification time after: %s", config.ReportPathPattern, t)
-				log.Warnf("Retrying without modtime check....")
-				fmt.Println()
-			} else {
-				log.Warnf("No reports found with pattern: %s without modtime check", config.ReportPathPattern)
-				log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
-			}
-		}
+	reports, err := getArtifacts(gradleProject, started, config.ReportPathPattern)
+	if err != nil {
+		failf("Failed to find reports, error: %v", err)
 	}
 
 	for _, report := range reports {
@@ -178,23 +163,9 @@ func main() {
 	log.Infof("Export results:")
 	fmt.Println()
 
-	var results []gradle.Artifact
-	for _, t := range []time.Time{started, time.Time{}} {
-		results, err = gradleProject.FindDirs(t, config.ResultPathPattern, true)
-		if err != nil {
-			failf("failed to find results, error: %v", err)
-		}
-
-		if len(results) == 0 {
-			if t == started {
-				log.Warnf("No results found with pattern: %s that has modification time after: %s", config.ResultPathPattern, t)
-				log.Warnf("Retrying without modtime check....")
-				fmt.Println()
-			} else {
-				log.Warnf("No results found with pattern: %s without modtime check", config.ResultPathPattern)
-				log.Warnf("If you have changed default report export path in your gradle files then you might need to change ResultPathPattern accordingly.")
-			}
-		}
+	results, err := getArtifacts(gradleProject, started, config.ResultPathPattern)
+	if err != nil {
+		failf("Failed to find results, error: %v", err)
 	}
 
 	for _, result := range results {
@@ -228,8 +199,28 @@ func main() {
 
 	fmt.Println()
 	log.Infof("Collecting cache:")
-	if warning := androidcache.Collect(config.ProjectLocation, androidcache.Level(config.CacheLevel)); warning != nil {
+	if warning := cache.Collect(config.ProjectLocation, cache.Level(config.CacheLevel)); warning != nil {
 		log.Warnf("%s", warning)
 	}
 	log.Donef("  Done")
+}
+
+func getArtifacts(gradleProject gradle.Project, started time.Time, pattern string) (artifacts []gradle.Artifact, err error) {
+	for _, t := range []time.Time{started, time.Time{}} {
+		artifacts, err = gradleProject.FindDirs(t, pattern, true)
+		if err != nil {
+			return
+		}
+		if len(artifacts) == 0 {
+			if t == started {
+				log.Warnf("No reports found with pattern: %s that has modification time after: %s", pattern, t)
+				log.Warnf("Retrying without modtime check....")
+				fmt.Println()
+				continue
+			}
+			log.Warnf("No reports found with pattern: %s without modtime check", pattern)
+			log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
+		}
+	}
+	return
 }

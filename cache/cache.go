@@ -1,4 +1,4 @@
-package androidcache
+package cache
 
 import (
 	"crypto/md5"
@@ -30,7 +30,7 @@ func Collect(projectRoot string, cacheLevel Level) error {
 		gradleCache := cache.New()
 		homeDir := pathutil.UserHomeDir()
 
-		includePths := []string{}
+		var includePths []string
 
 		projectRoot, err := filepath.Abs(projectRoot)
 		if err != nil {
