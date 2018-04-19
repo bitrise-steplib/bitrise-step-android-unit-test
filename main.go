@@ -54,8 +54,6 @@ func getArtifacts(gradleProject gradle.Project, started time.Time, pattern strin
 
 func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
 	for _, artifact := range artifacts {
-		artifact.Name += ".zip"
-
 		exists, err := pathutil.IsPathExists(filepath.Join(deployDir, artifact.Name))
 		if err != nil {
 			return fmt.Errorf("failed to check path, error: %v", err)
@@ -65,9 +63,7 @@ func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
 
 		if exists {
 			timestamp := time.Now().Format("20060102150405")
-			ext := filepath.Ext(artifact.Name)
-			name := strings.TrimSuffix(filepath.Base(artifact.Name), ext)
-			artifact.Name = fmt.Sprintf("%s-%s%s", name, timestamp, ext)
+			artifact.Name = fmt.Sprintf("%s-%s%s", artifactName, timestamp, ".zip")
 		}
 
 		log.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", artifactName, artifact.Name)
@@ -99,9 +95,7 @@ func main() {
 		failf("Failed to open project, error: %s", err)
 	}
 
-	testTask := gradleProject.
-		GetModule(config.Module).
-		GetTask("test")
+	testTask := gradleProject.GetTask("test")
 
 	log.Infof("Variants:")
 	fmt.Println()

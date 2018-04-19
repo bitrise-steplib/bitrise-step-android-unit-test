@@ -30,8 +30,6 @@ func Collect(projectRoot string, cacheLevel Level) error {
 		gradleCache := cache.New()
 		homeDir := pathutil.UserHomeDir()
 
-		var includePths []string
-
 		projectRoot, err := filepath.Abs(projectRoot)
 		if err != nil {
 			return fmt.Errorf("cache collection skipped: failed to determine project root path")
@@ -55,6 +53,8 @@ func Collect(projectRoot string, cacheLevel Level) error {
 			"!*.ap_",
 			"!*.apk",
 		}
+
+		var includePths []string
 
 		if cacheLevel == LevelAll || cacheLevel == LevelDeps {
 			lockfileContent := ""

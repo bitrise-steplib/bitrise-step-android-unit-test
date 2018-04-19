@@ -61,11 +61,11 @@ func NewProject(location string) (Project, error) {
 	return Project{location: location, monoRepo: (projectsCount > 1)}, nil
 }
 
-// GetModule ...
-func (proj Project) GetModule(module string) Module {
-	return Module{
+// GetTask ...
+func (proj Project) GetTask(name string) *Task {
+	return &Task{
 		project: proj,
-		name:    module,
+		name:    name,
 	}
 }
 

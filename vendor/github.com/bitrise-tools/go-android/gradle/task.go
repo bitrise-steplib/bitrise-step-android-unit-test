@@ -7,13 +7,13 @@ import (
 
 // Task ...
 type Task struct {
-	name   string
-	module Module
+	name    string
+	project Project
 }
 
 // GetVariants ...
 func (task *Task) GetVariants() (Variants, error) {
-	tasksOutput, err := getGradleOutput(task.module.project.location, "tasks", "--all")
+	tasksOutput, err := getGradleOutput(task.project.location, "tasks", "--all")
 	if err != nil {
 		return nil, fmt.Errorf("%s, %s", tasksOutput, err)
 	}
@@ -44,8 +44,6 @@ lines:
 		if len(split) > 1 {
 			module = split[0]
 			l = split[1]
-		} else {
-			module = task.module.name
 		}
 		// module removed if any
 		if strings.HasPrefix(l, task.name) {
@@ -89,5 +87,5 @@ func (task *Task) Run(v Variants, args ...string) error {
 			a = append(a, cleanModuleName(module)+task.name+variant)
 		}
 	}
-	return runGradleCommand(task.module.project.location, append(a, args...)...)
+	return runGradleCommand(task.project.location, append(a, args...)...)
 }
