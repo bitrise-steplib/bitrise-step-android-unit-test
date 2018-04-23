@@ -18,7 +18,7 @@ import (
 
 // Configs ...
 type Configs struct {
-	ProjectLocation   string `env:"project_location,required"`
+	ProjectLocation   string `env:"project_location,dir"`
 	ReportPathPattern string `env:"report_path_pattern"`
 	ResultPathPattern string `env:"result_path_pattern"`
 	Variant           string `env:"variant"`
