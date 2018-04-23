@@ -8,6 +8,7 @@
     "colorstring",
     "command",
     "errorutil",
+    "fileutil",
     "log",
     "parseutil",
     "pathutil",
@@ -26,8 +27,18 @@
 [[projects]]
   branch = "master"
   name = "github.com/bitrise-tools/go-steputils"
-  packages = ["stepconf"]
+  packages = [
+    "cache",
+    "stepconf",
+    "tools"
+  ]
   revision = "d4d9e08cc4347e8784bb18419fcdceb932e17019"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kballard/go-shellquote"
+  packages = ["."]
+  revision = "cd60e84ee657ff3dc51de0b4f55dd299a3e136f2"
 
 [[projects]]
   name = "github.com/ryanuber/go-glob"
@@ -38,6 +49,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0bf6ee014103ddba75ac2819e4fbfb2dbaa48e1b9fa05cdd643d11cdd34901e6"
+  inputs-digest = "d4c768f42573c36153b5df61b17911994512ba66630306fc82aa09406f37ac7c"
   solver-name = "gps-cdcl"
   solver-version = 1

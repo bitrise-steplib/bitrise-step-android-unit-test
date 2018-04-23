@@ -61,18 +61,11 @@ func NewProject(location string) (Project, error) {
 	return Project{location: location, monoRepo: (projectsCount > 1)}, nil
 }
 
-func getGradleModule(configModule string) string {
-	if configModule != "" {
-		return fmt.Sprintf(":%s:", configModule)
-	}
-	return ""
-}
-
-// GetModule ...
-func (proj Project) GetModule(module string) Module {
-	return Module{
+// GetTask ...
+func (proj Project) GetTask(name string) *Task {
+	return &Task{
 		project: proj,
-		name:    getGradleModule(module),
+		name:    name,
 	}
 }
 

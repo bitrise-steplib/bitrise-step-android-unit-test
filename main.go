@@ -10,8 +10,10 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/sliceutil"
+	"github.com/bitrise-steplib/bitrise-step-android-unit-test/cache"
 	"github.com/bitrise-tools/go-android/gradle"
 	"github.com/bitrise-tools/go-steputils/stepconf"
+	shellquote "github.com/kballard/go-shellquote"
 )
 
 // Configs ...
@@ -21,11 +23,56 @@ type Configs struct {
 	ResultPathPattern string `env:"result_path_pattern"`
 	Variant           string `env:"variant"`
 	Module            string `env:"module"`
+	Arguments         string `env:"arguments"`
+	CacheLevel        string `env:"cache_level,opt[none,only_deps,all]"`
 }
 
 func failf(f string, args ...interface{}) {
 	log.Errorf(f, args...)
 	os.Exit(1)
+}
+
+func getArtifacts(gradleProject gradle.Project, started time.Time, pattern string) (artifacts []gradle.Artifact, err error) {
+	for _, t := range []time.Time{started, time.Time{}} {
+		artifacts, err = gradleProject.FindDirs(t, pattern, true)
+		if err != nil {
+			return
+		}
+		if len(artifacts) == 0 {
+			if t == started {
+				log.Warnf("No artifacts found with pattern: %s that has modification time after: %s", pattern, t)
+				log.Warnf("Retrying without modtime check....")
+				fmt.Println()
+				continue
+			}
+			log.Warnf("No artifacts found with pattern: %s without modtime check", pattern)
+			log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
+		}
+	}
+	return
+}
+
+func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
+	for _, artifact := range artifacts {
+		artifact.Name += ".zip"
+		exists, err := pathutil.IsPathExists(filepath.Join(deployDir, artifact.Name))
+		if err != nil {
+			return fmt.Errorf("failed to check path, error: %v", err)
+		}
+
+		if exists {
+			timestamp := time.Now().Format("20060102150405")
+			artifact.Name = fmt.Sprintf("%s-%s%s", strings.TrimSuffix(artifact.Name, ".zip"), timestamp, ".zip")
+		}
+
+		log.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", filepath.Base(artifact.Path), artifact.Name)
+
+		if err := artifact.ExportZIP(deployDir); err != nil {
+			log.Warnf("failed to export artifact (%s), error: %v", artifact.Path, err)
+			continue
+		}
+	}
+	return nil
 }
 
 func main() {
@@ -47,9 +94,7 @@ func main() {
 		failf("Failed to open project, error: %s", err)
 	}
 
-	testTask := gradleProject.
-		GetModule(config.Module).
-		GetTask("test")
+	testTask := gradleProject.GetTask("test")
 
 	log.Infof("Variants:")
 	fmt.Println()
@@ -59,35 +104,42 @@ func main() {
 		failf("Failed to fetch variants, error: %s", err)
 	}
 
-	filteredVariants := variants.Filter(config.Variant)
+	filteredVariants := variants.Filter(config.Module, config.Variant)
 
-	for _, variant := range variants {
-		if sliceutil.IsStringInSlice(variant, filteredVariants) {
-			log.Donef("✓ %s", variant)
-		} else {
-			log.Printf("- %s", variant)
+	for module, variants := range variants {
+		log.Printf("%s:", module)
+		for _, variant := range variants {
+			if sliceutil.IsStringInSlice(variant, filteredVariants[module]) {
+				log.Donef("✓ %s", strings.TrimSuffix(variant, "UnitTest"))
+			} else {
+				log.Printf("- %s", strings.TrimSuffix(variant, "UnitTest"))
+			}
 		}
 	}
-
 	fmt.Println()
 
 	if len(filteredVariants) == 0 {
-		errMsg := fmt.Sprintf("No variant matching for: (%s)", config.Variant)
-		if config.Module != "" {
-			errMsg += fmt.Sprintf(" in module: [%s]", config.Module)
+		if config.Variant != "" {
+			if config.Module == "" {
+				failf("Variant (%s) not found in any module", config.Variant)
+			} else {
+				failf("No variant matching for (%s) in module: [%s]", config.Variant, config.Module)
+			}
 		}
-		failf(errMsg)
-	}
-
-	if config.Variant == "" {
-		log.Warnf("No variant specified, test will run on all variants")
-		fmt.Println()
+		failf("Module not found: %s", config.Module)
 	}
 
 	started := time.Now()
 
+	args, err := shellquote.Split(config.Arguments)
+	if err != nil {
+		failf("Failed to parse arguments, error: %s", err)
+	}
+
+	var testErr error
+
 	log.Infof("Run test:")
-	testErr := testTask.Run(filteredVariants)
+	testErr = testTask.Run(filteredVariants, args...)
 	if testErr != nil {
 		log.Errorf("Test task failed, error: %v", testErr)
 	}
@@ -96,40 +148,13 @@ func main() {
 	log.Infof("Export reports:")
 	fmt.Println()
 
-	reports, err := gradleProject.FindDirs(started, config.ReportPathPattern, true)
+	reports, err := getArtifacts(gradleProject, started, config.ReportPathPattern)
 	if err != nil {
-		failf("failed to find reports, error: %v", err)
+		failf("Failed to find reports, error: %v", err)
 	}
 
-	if len(reports) == 0 {
-		log.Warnf("No reports found with pattern: %s", config.ReportPathPattern)
-		log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
-		os.Exit(0)
-	}
-
-	for _, report := range reports {
-		report.Name += ".zip"
-
-		exists, err := pathutil.IsPathExists(filepath.Join(deployDir, report.Name))
-		if err != nil {
-			failf("failed to check path, error: %v", err)
-		}
-
-		artifactName := filepath.Base(report.Path)
-
-		if exists {
-			timestamp := time.Now().Format("20060102150405")
-			ext := filepath.Ext(report.Name)
-			name := strings.TrimSuffix(filepath.Base(report.Name), ext)
-			report.Name = fmt.Sprintf("%s-%s%s", name, timestamp, ext)
-		}
-
-		log.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", artifactName, report.Name)
-
-		if err := report.ExportZIP(deployDir); err != nil {
-			log.Warnf("failed to export report (%s), error: %v", report.Path, err)
-			continue
-		}
+	if err := exportArtifacts(deployDir, reports); err != nil {
+		failf("Failed to export reports, error: %v", err)
 	}
 
 	fmt.Println()
@@ -137,43 +162,23 @@ func main() {
 	log.Infof("Export results:")
 	fmt.Println()
 
-	results, err := gradleProject.FindDirs(started, config.ResultPathPattern, true)
+	results, err := getArtifacts(gradleProject, started, config.ResultPathPattern)
 	if err != nil {
-		failf("failed to find results, error: %v", err)
+		failf("Failed to find results, error: %v", err)
 	}
 
-	if len(results) == 0 {
-		log.Warnf("No results found with pattern: %s", config.ResultPathPattern)
-		log.Warnf("If you have changed default report export path in your gradle files then you might need to change ResultPathPattern accordingly.")
-		os.Exit(0)
-	}
-
-	for _, result := range results {
-		result.Name += ".zip"
-
-		exists, err := pathutil.IsPathExists(filepath.Join(deployDir, result.Name))
-		if err != nil {
-			failf("failed to check path, error: %v", err)
-		}
-
-		artifactName := filepath.Base(result.Path)
-
-		if exists {
-			timestamp := time.Now().Format("20060102150405")
-			ext := filepath.Ext(result.Name)
-			name := strings.TrimSuffix(filepath.Base(result.Name), ext)
-			result.Name = fmt.Sprintf("%s-%s%s", name, timestamp, ext)
-		}
-
-		log.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", artifactName, result.Name)
-
-		if err := result.ExportZIP(deployDir); err != nil {
-			log.Warnf("failed to export result (%s), error: %v", result.Path, err)
-			continue
-		}
+	if err := exportArtifacts(deployDir, results); err != nil {
+		failf("Failed to export results, error: %v", err)
 	}
 
 	if testErr != nil {
 		os.Exit(1)
 	}
+
+	fmt.Println()
+	log.Infof("Collecting cache:")
+	if warning := cache.Collect(config.ProjectLocation, cache.Level(config.CacheLevel)); warning != nil {
+		log.Warnf("%s", warning)
+	}
+	log.Donef("  Done")
 }
