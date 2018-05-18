@@ -139,7 +139,13 @@ func main() {
 	var testErr error
 
 	log.Infof("Run test:")
-	testErr = testTask.Run(filteredVariants, args...)
+	testCommand := testTask.GetCommand(filteredVariants, args...)
+
+	fmt.Println()
+	log.Donef("$ " + testCommand.PrintableCommandArgs())
+	fmt.Println()
+
+	testErr = testCommand.Run()
 	if testErr != nil {
 		log.Errorf("Test task failed, error: %v", testErr)
 	}

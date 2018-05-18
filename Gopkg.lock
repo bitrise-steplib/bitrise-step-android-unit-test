@@ -16,13 +16,13 @@
     "sliceutil",
     "ziputil"
   ]
-  revision = "b33f6bcef9b50045d7e62364b354584afc3ee329"
+  revision = "d1de0dbcb811588e61362aff67bb700b93c13c17"
 
 [[projects]]
   branch = "master"
   name = "github.com/bitrise-tools/go-android"
   packages = ["gradle"]
-  revision = "0a629e2052d4dbb9c079d2abd596e418818d7306"
+  revision = "d76dcd0cbf2d6643f6b381751a20a153bcbfb55d"
 
 [[projects]]
   branch = "master"
@@ -38,7 +38,7 @@
   branch = "master"
   name = "github.com/kballard/go-shellquote"
   packages = ["."]
-  revision = "cd60e84ee657ff3dc51de0b4f55dd299a3e136f2"
+  revision = "95032a82bc518f77982ea72343cc1ade730072f0"
 
 [[projects]]
   name = "github.com/ryanuber/go-glob"
