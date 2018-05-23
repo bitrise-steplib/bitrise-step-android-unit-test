@@ -1,6 +1,10 @@
-## Changelog (Current version: 0.9.2)
+## Changelog (Current version: 0.9.3)
 
 -----------------
+
+### 0.9.3 (2018 May 23)
+* [8559d9b] Prepare for 0.9.3
+* [b9497ae] dep update & command printing (#5)
 
 ### 0.9.2 (2018 Apr 23)
 * [a0cac97] Prepare for 0.9.2
@@ -12,4 +16,4 @@
 
 -----------------
 
-Updated: 2018 Apr 23
+Updated: 2018 May 23
