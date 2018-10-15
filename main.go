@@ -75,6 +75,33 @@ func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
 	return nil
 }
 
+func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle.Variants, error) {
+	// if module set: drop all the other modules
+	if module != "" {
+		v, ok := variantsMap[module]
+		if !ok {
+			return nil, fmt.Errorf("module not found: %s", module)
+		}
+		variantsMap = gradle.Variants{module: v}
+	}
+	// if variant not set: use all variants
+	if variant == "" {
+		return variantsMap, nil
+	}
+	filteredVariants := gradle.Variants{}
+	for m, variants := range variantsMap {
+		for _, v := range variants {
+			if strings.ToLower(v) == strings.ToLower(variant) {
+				filteredVariants[m] = append(filteredVariants[m], v)
+			}
+		}
+	}
+	if len(filteredVariants) == 0 {
+		return nil, fmt.Errorf("variant: %s not found in any module", variant)
+	}
+	return filteredVariants, nil
+}
+
 func main() {
 	var config Configs
 
@@ -104,7 +131,10 @@ func main() {
 		failf("Failed to fetch variants, error: %s", err)
 	}
 
-	filteredVariants := variants.Filter(config.Module, config.Variant)
+	filteredVariants, err := filterVariants(config.Module, config.Variant, variants)
+	if err != nil {
+		failf("Failed to find buildable variants, error: %s", err)
+	}
 
 	for module, variants := range variants {
 		log.Printf("%s:", module)
@@ -117,17 +147,6 @@ func main() {
 		}
 	}
 	fmt.Println()
-
-	if len(filteredVariants) == 0 {
-		if config.Variant != "" {
-			if config.Module == "" {
-				failf("Variant (%s) not found in any module", config.Variant)
-			} else {
-				failf("No variant matching for (%s) in module: [%s]", config.Variant, config.Module)
-			}
-		}
-		failf("Module not found: %s", config.Module)
-	}
 
 	started := time.Now()
 
