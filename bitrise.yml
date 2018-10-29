@@ -40,6 +40,11 @@ workflows:
         - gradlew_path: ./gradlew
     - path::./:
         title: Test simple android project
+    - path::./:
+        title: Test simple android project with module and variant set
+        inputs:
+        - module: app
+        - variant: Debug
 
   test-in-root-tmp-dir:
     title: Test android project & mono repo projects in /tmp dir
