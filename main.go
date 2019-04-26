@@ -11,6 +11,7 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/cache"
+	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
 	"github.com/bitrise-tools/go-android/gradle"
 	"github.com/bitrise-tools/go-steputils/stepconf"
 	shellquote "github.com/kballard/go-shellquote"
@@ -194,6 +195,10 @@ func main() {
 
 	if err := exportArtifacts(deployDir, results); err != nil {
 		failf("Failed to export results, error: %v", err)
+	}
+
+	if err := testaddon.ExportArtifacts(results); err != nil {
+		failf("Failed to export results for test addon, error: %v", err)
 	}
 
 	if testErr != nil {
