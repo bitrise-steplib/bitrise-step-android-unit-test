@@ -197,7 +197,12 @@ func main() {
 		failf("Failed to export results, error: %v", err)
 	}
 
-	if err := testaddon.ExportArtifacts(results); err != nil {
+	resultXMLs, err := testaddon.GetArtifacts(gradleProject, started, "*TEST*.xml")
+	if err != nil {
+		failf("Failed to find test result XMLs, error: %v", err)
+	}
+
+	if err := testaddon.ExportArtifacts(resultXMLs); err != nil {
 		failf("Failed to export results for test addon, error: %v", err)
 	}
 

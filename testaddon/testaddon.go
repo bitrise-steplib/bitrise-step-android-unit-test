@@ -3,6 +3,7 @@ package testaddon
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-tools/go-android/gradle"
@@ -30,8 +31,30 @@ func extractVariant(name string) string {
 	return ""
 }
 
+func GetArtifacts(gradleProject gradle.Project, started time.Time, pattern string) (artifacts []gradle.Artifact, err error) {
+	for _, t := range []time.Time{started, time.Time{}} {
+		artifacts, err = gradleProject.FindArtifacts(t, pattern, false)
+		if err != nil {
+			return
+		}
+		if len(artifacts) == 0 {
+			if t == started {
+				log.Warnf("No artifacts found with pattern: %s that has modification time after: %s", pattern, t)
+				log.Warnf("Retrying without modtime check....")
+				fmt.Println()
+				continue
+			}
+			log.Warnf("No artifacts found with pattern: %s without modtime check", pattern)
+			log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
+		}
+	}
+	return
+}
+
+// app-TEST-example.com.helloworld.ExampleUnitTest.xml
 func ExportArtifacts(artifacts []gradle.Artifact) error {
 	for _, artifact := range artifacts {
+		log.Printf("processing artifact: %s", artifact)
 		module, err := getModule(artifact.Path)
 		if err != nil {
 			log.Warnf("skipping artifact (%s): %s", artifact.Path, err)
