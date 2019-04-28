@@ -2,14 +2,16 @@ package testaddon
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-tools/go-android/gradle"
 )
 
-var baseDir string
+var baseDir string = os.Getenv("BITRISE_TEST_DEPLOY_DIR")
 
 // getModule deduces the module name from a path like:
 // path_to_your_project/module_name/build/test-results/testDebugUnitTest/TEST-com.bitrise_io.sample_apps_android_simple.ExampleUnitTest.xml
@@ -27,8 +29,24 @@ func getModule(path string) (string, error) {
 	return parts[i - 2], nil
 }
 
-func extractVariant(name string) string {
-	return ""
+func extractVariant(path string) (string, error) {
+	parts := strings.Split(path, "/")
+	i := len(parts) - 1
+	for i > 0 && parts[i] != "test-results" {
+		i--
+	}
+
+	if i == 0 {
+		return "", fmt.Errorf("could not determine variant based on path")
+	}
+
+	variant := parts[i + 1]
+	variant = strings.TrimPrefix(variant, "test")
+	variant = strings.TrimSuffix(variant, "UnitTest")
+	
+	runes := []rune(variant)
+	runes[0] = unicode.ToLower(runes[0])
+	return string(runes), nil
 }
 
 func GetArtifacts(gradleProject gradle.Project, started time.Time, pattern string) (artifacts []gradle.Artifact, err error) {
@@ -61,9 +79,18 @@ func ExportArtifacts(artifacts []gradle.Artifact) error {
 			continue
 		}
 
-		variant := extractVariant(artifact.Path)
-		uniqueDir := fmt.Sprintf("%d-%s%s", module, variant)
+		variant, err := extractVariant(artifact.Path)
+		if err != nil {
+			log.Warnf("skipping artifact (%s): could not extract variant name: %s", artifact.Path, err)
+			continue
+		}
+		uniqueDir := module + "-" + variant
 		exportDir := strings.Join([]string{baseDir, uniqueDir}, "/")
+
+		if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
+			log.Warnf("skipping artifact (%s): could not ensure unique export dir (%s): %s", artifact.Path, exportDir, err)
+		}
+
 		if err := artifact.Export(exportDir); err != nil {
 			log.Warnf("failed to export artifact (%s), error: %v", artifact.Name, err)
 		}
