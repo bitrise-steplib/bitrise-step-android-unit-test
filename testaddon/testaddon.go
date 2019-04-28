@@ -26,6 +26,10 @@ func getModule(path string) (string, error) {
 	return parts[i - 2], nil
 }
 
+func extractVariant(name string) string {
+	return ""
+}
+
 func ExportArtifacts(artifacts []gradle.Artifact) error {
 	for _, artifact := range artifacts {
 		module, err := getModule(artifact.Path)
@@ -34,11 +38,11 @@ func ExportArtifacts(artifacts []gradle.Artifact) error {
 			continue
 		}
 
-		flavour, buildType := "", ""  // todo: figure out how to get the required data to build the dir name
-		uniqueDir := fmt.Sprintf("%d-%s%s", module, flavour, buildType)
+		variant := extractVariant(artifact.Path)
+		uniqueDir := fmt.Sprintf("%d-%s%s", module, variant)
 		exportDir := strings.Join([]string{baseDir, uniqueDir}, "/")
 		if err := artifact.Export(exportDir); err != nil {
-			log.Warnf("failed to export artifact (%s), error: %v", artifact.Path, err)
+			log.Warnf("failed to export artifact (%s), error: %v", artifact.Name, err)
 		}
 	}
 	return nil
