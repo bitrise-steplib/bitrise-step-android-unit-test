@@ -72,7 +72,7 @@ func GetArtifacts(gradleProject gradle.Project, started time.Time, pattern strin
 // app-TEST-example.com.helloworld.ExampleUnitTest.xml
 func ExportArtifacts(artifacts []gradle.Artifact) error {
 	for _, artifact := range artifacts {
-		log.Printf("processing artifact: %s", artifact)
+		log.Debugf("processing artifact: %s", artifact.Path)
 		module, err := getModule(artifact.Path)
 		if err != nil {
 			log.Warnf("skipping artifact (%s): %s", artifact.Path, err)
@@ -84,6 +84,8 @@ func ExportArtifacts(artifacts []gradle.Artifact) error {
 			log.Warnf("skipping artifact (%s): could not extract variant name: %s", artifact.Path, err)
 			continue
 		}
+
+		log.Debugf("artifact (%s) produced by %s variant", artifact.Path, variant)
 		uniqueDir := module + "-" + variant
 		exportDir := strings.Join([]string{baseDir, uniqueDir}, "/")
 
