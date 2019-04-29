@@ -1,8 +1,10 @@
 package testaddon
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 	"unicode"
@@ -49,6 +51,27 @@ func extractVariant(path string) (string, error) {
 	return string(runes), nil
 }
 
+func generateTestInfoFile(dir string, data []byte) error {
+	f, err := os.Create(filepath.Join(dir, "test-info.json"))
+	if err != nil {
+		return err
+	}
+	
+	if _, err := f.Write(data); err != nil {
+		return err
+	}
+	
+	if err := f.Sync(); err != nil {
+		return err
+	}
+	
+	if err := f.Close(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetArtifacts(gradleProject gradle.Project, started time.Time, pattern string) (artifacts []gradle.Artifact, err error) {
 	for _, t := range []time.Time{started, time.Time{}} {
 		artifacts, err = gradleProject.FindArtifacts(t, pattern, false)
@@ -91,6 +114,18 @@ func ExportArtifacts(artifacts []gradle.Artifact) error {
 
 		if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
 			log.Warnf("skipping artifact (%s): could not ensure unique export dir (%s): %s", artifact.Path, exportDir, err)
+		}
+
+		if _, err := os.Stat(filepath.Join(exportDir, "test-info.json")); os.IsNotExist(err) {
+			m := map[string]string{"test-name": uniqueDir}
+			data, err := json.Marshal(m)
+			if err != nil {
+				log.Warnf("create test info descriptor: json marshal data (%s): %s", m, err)
+				continue
+			}
+			if err := generateTestInfoFile(exportDir, data); err != nil {
+				log.Warnf("create test info descriptor: generate file: %s", err)
+			}
 		}
 
 		if err := artifact.Export(exportDir); err != nil {
