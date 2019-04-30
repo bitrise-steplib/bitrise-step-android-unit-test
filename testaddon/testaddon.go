@@ -18,10 +18,8 @@ const (
 	ResultDescriptorFileName = "test-info.json"
 )
 
-var baseDir string = os.Getenv("BITRISE_TEST_DEPLOY_DIR")
-
 // getModule deduces the module name from a path like:
-// path_to_your_project/module_name/build/test-results/testDebugUnitTest/TEST-com.bitrise_io.sample_apps_android_simple.ExampleUnitTest.xml
+// path example: <PATH_TO_YOUR_PROJECT>/<MODULE_NAME>/build/test-results/testDemoDebugUnitTest/TEST-example.com.helloworld.ExampleUnitTest.xml
 func getModule(path string) (string, error) {
 	parts := strings.Split(path, "/")
 	i := len(parts) - 1
@@ -37,6 +35,7 @@ func getModule(path string) (string, error) {
 }
 
 func extractVariant(path string) (string, error) {
+	// path example: <PATH_TO_YOUR_PROJECT>/<MODULE_NAME>/build/test-results/testDemoDebugUnitTest/TEST-example.com.helloworld.ExampleUnitTest.xml
 	parts := strings.Split(path, "/")
 	i := len(parts) - 1
 	for i > 0 && parts[i] != "test-results" {
@@ -77,6 +76,8 @@ func generateTestInfoFile(dir string, data []byte) error {
 	return nil
 }
 
+// GetArtifacts retrieves the test output artifacts produced by the gradle
+// task(s) ran
 func GetArtifacts(gradleProject gradle.Project, started time.Time, pattern string) (artifacts []gradle.Artifact, err error) {
 	for _, t := range []time.Time{started, time.Time{}} {
 		artifacts, err = gradleProject.FindArtifacts(t, pattern, false)
@@ -97,8 +98,10 @@ func GetArtifacts(gradleProject gradle.Project, started time.Time, pattern strin
 	return
 }
 
-// app-TEST-example.com.helloworld.ExampleUnitTest.xml
-func ExportArtifacts(artifacts []gradle.Artifact) error {
+// ExportArtifacts exports the artifacts in a directory structure rooted at the
+// specified directory. The directory where each artifact is exported depends
+// on which module and build variant produced it.
+func ExportArtifacts(artifacts []gradle.Artifact, baseDir string) error {
 	for _, artifact := range artifacts {
 		log.Debugf("processing artifact: %s", artifact.Path)
 		module, err := getModule(artifact.Path)
