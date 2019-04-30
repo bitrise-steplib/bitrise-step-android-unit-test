@@ -200,7 +200,7 @@ func main() {
 	log.Infof("Export test results for test addon:")
 	fmt.Println()
 
-	resultXMLs, err := testaddon.GetArtifacts(gradleProject, started, "*TEST*.xml")
+	resultXMLs, err := testaddon.GetArtifacts(gradleProject, started, testaddon.ResultArtifactPathPattern)
 	if err != nil {
 		failf("Failed to find test result XMLs, error: %v", err)
 	}

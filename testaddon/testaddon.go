@@ -13,6 +13,11 @@ import (
 	"github.com/bitrise-tools/go-android/gradle"
 )
 
+const (
+	ResultArtifactPathPattern = "*TEST*.xml"
+	ResultDescriptorFileName = "test-info.json"
+)
+
 var baseDir string = os.Getenv("BITRISE_TEST_DEPLOY_DIR")
 
 // getModule deduces the module name from a path like:
@@ -52,7 +57,7 @@ func extractVariant(path string) (string, error) {
 }
 
 func generateTestInfoFile(dir string, data []byte) error {
-	f, err := os.Create(filepath.Join(dir, "test-info.json"))
+	f, err := os.Create(filepath.Join(dir, ResultDescriptorFileName))
 	if err != nil {
 		return err
 	}
@@ -116,7 +121,7 @@ func ExportArtifacts(artifacts []gradle.Artifact) error {
 			log.Warnf("skipping artifact (%s): could not ensure unique export dir (%s): %s", artifact.Path, exportDir, err)
 		}
 
-		if _, err := os.Stat(filepath.Join(exportDir, "test-info.json")); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(exportDir, ResultDescriptorFileName)); os.IsNotExist(err) {
 			m := map[string]string{"test-name": uniqueDir}
 			data, err := json.Marshal(m)
 			if err != nil {
