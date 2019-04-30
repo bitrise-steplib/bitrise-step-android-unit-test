@@ -200,6 +200,10 @@ func main() {
 	log.Infof("Export test results for test addon:")
 	fmt.Println()
 
+	if testErr != nil {
+		os.Exit(1)
+	}
+
 	resultXMLs, err := testaddon.GetArtifacts(gradleProject, started, testaddon.ResultArtifactPathPattern)
 	if err != nil {
 		failf("Failed to find test result XMLs, error: %v", err)
@@ -211,10 +215,6 @@ func main() {
 		}
 	} else {
 		log.Warnf("$BITRISE_TEST_DEPLOY_DIR not set. Could not export test results for test addon.")
-	}
-
-	if testErr != nil {
-		os.Exit(1)
 	}
 
 	fmt.Println()
