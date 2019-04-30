@@ -15,7 +15,7 @@ import (
 
 const (
 	ResultArtifactPathPattern = "*TEST*.xml"
-	ResultDescriptorFileName = "test-info.json"
+	ResultDescriptorFileName  = "test-info.json"
 )
 
 // getModule deduces the module name from a path like:
@@ -31,7 +31,7 @@ func getModule(path string) (string, error) {
 		return "", fmt.Errorf("could not determine module based on path")
 	}
 
-	return parts[i - 2], nil
+	return parts[i-2], nil
 }
 
 func extractVariant(path string) (string, error) {
@@ -46,10 +46,10 @@ func extractVariant(path string) (string, error) {
 		return "", fmt.Errorf("could not determine variant based on path")
 	}
 
-	variant := parts[i + 1]
+	variant := parts[i+1]
 	variant = strings.TrimPrefix(variant, "test")
 	variant = strings.TrimSuffix(variant, "UnitTest")
-	
+
 	runes := []rune(variant)
 	runes[0] = unicode.ToLower(runes[0])
 	return string(runes), nil
@@ -60,15 +60,15 @@ func generateTestInfoFile(dir string, data []byte) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if _, err := f.Write(data); err != nil {
 		return err
 	}
-	
+
 	if err := f.Sync(); err != nil {
 		return err
 	}
-	
+
 	if err := f.Close(); err != nil {
 		return err
 	}

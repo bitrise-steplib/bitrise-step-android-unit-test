@@ -208,7 +208,7 @@ func main() {
 	if err != nil {
 		failf("Failed to find test result XMLs, error: %v", err)
 	}
-	
+
 	if baseDir := os.Getenv("BITRISE_TEST_DEPLOY_DIR"); baseDir != "" {
 		if err := testaddon.ExportArtifacts(resultXMLs, baseDir); err != nil {
 			failf("Failed to export results for test addon, error: %v", err)
