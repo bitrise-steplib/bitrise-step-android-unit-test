@@ -212,7 +212,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	resultXMLs, err := testaddon.GetArtifacts(gradleProject, started, testaddon.ResultArtifactPathPattern)
+	resultXMLs, err := getArtifacts(gradleProject, started, testaddon.ResultArtifactPathPattern, false)
 	if err != nil {
 		failf("Failed to find test result XMLs, error: %v", err)
 	}

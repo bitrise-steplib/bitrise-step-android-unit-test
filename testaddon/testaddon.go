@@ -6,12 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/log"
-	"github.com/bitrise-tools/go-android/gradle"
 )
 
 const (
@@ -77,28 +75,6 @@ func generateTestInfoFile(dir string, data []byte) error {
 	}
 
 	return nil
-}
-
-// GetArtifacts retrieves the test output artifacts produced by the gradle
-// task(s) ran
-func GetArtifacts(gradleProject gradle.Project, started time.Time, pattern string) (artifacts []gradle.Artifact, err error) {
-	for _, t := range []time.Time{started, time.Time{}} {
-		artifacts, err = gradleProject.FindArtifacts(t, pattern, false)
-		if err != nil {
-			return
-		}
-		if len(artifacts) == 0 {
-			if t == started {
-				log.Warnf("No artifacts found with pattern: %s that has modification time after: %s", pattern, t)
-				log.Warnf("Retrying without modtime check....")
-				fmt.Println()
-				continue
-			}
-			log.Warnf("No artifacts found with pattern: %s without modtime check", pattern)
-			log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
-		}
-	}
-	return
 }
 
 // ExportArtifacts exports the artifacts in a directory structure rooted at the
