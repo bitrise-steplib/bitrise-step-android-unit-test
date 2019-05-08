@@ -17,8 +17,7 @@ import (
 	shellquote "github.com/kballard/go-shellquote"
 )
 
-// ResultArtifactPathPattern is a glob pattern matching test result XMLs.
-const ResultArtifactPathPattern = "*TEST*.xml"
+const resultArtifactPathPattern = "*TEST*.xml"
 
 // Configs ...
 type Configs struct {
@@ -215,7 +214,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	resultXMLs, err := getArtifacts(gradleProject, started, ResultArtifactPathPattern, false)
+	resultXMLs, err := getArtifacts(gradleProject, started, resultArtifactPathPattern, false)
 	if err != nil {
 		failf("Failed to find test result XMLs, error: %v", err)
 	}
