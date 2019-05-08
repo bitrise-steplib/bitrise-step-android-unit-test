@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	// ResultArtifactPathPattern is a glob pattern matching test result XMLs.
-	ResultArtifactPathPattern = "*TEST*.xml"
 	// ResultDescriptorFileName is the name of the test result descriptor file.
 	ResultDescriptorFileName  = "test-info.json"
 )
