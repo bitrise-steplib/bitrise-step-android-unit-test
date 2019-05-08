@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-tools/go-android/gradle"
 )
@@ -103,27 +104,27 @@ func GetArtifacts(gradleProject gradle.Project, started time.Time, pattern strin
 // ExportArtifacts exports the artifacts in a directory structure rooted at the
 // specified directory. The directory where each artifact is exported depends
 // on which module and build variant produced it.
-func ExportArtifacts(artifacts []gradle.Artifact, baseDir string) error {
-	for _, artifact := range artifacts {
-		log.Debugf("processing artifact: %s", artifact.Path)
-		module, err := getModule(artifact.Path)
+func ExportArtifacts(artifacts map[string]string, baseDir string) error {
+	for path, name := range artifacts {
+		log.Debugf("processing artifact: %s", path)
+		module, err := getModule(path)
 		if err != nil {
-			log.Warnf("skipping artifact (%s): %s", artifact.Path, err)
+			log.Warnf("skipping artifact (%s): %s", path, err)
 			continue
 		}
 
-		variant, err := extractVariant(artifact.Path)
+		variant, err := extractVariant(path)
 		if err != nil {
-			log.Warnf("skipping artifact (%s): could not extract variant name: %s", artifact.Path, err)
+			log.Warnf("skipping artifact (%s): could not extract variant name: %s", path, err)
 			continue
 		}
 
-		log.Debugf("artifact (%s) produced by %s variant", artifact.Path, variant)
+		log.Debugf("artifact (%s) produced by %s variant", path, variant)
 		uniqueDir := module + "-" + variant
 		exportDir := strings.Join([]string{baseDir, uniqueDir}, "/")
 
 		if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
-			log.Warnf("skipping artifact (%s): could not ensure unique export dir (%s): %s", artifact.Path, exportDir, err)
+			log.Warnf("skipping artifact (%s): could not ensure unique export dir (%s): %s", path, exportDir, err)
 		}
 
 		if _, err := os.Stat(filepath.Join(exportDir, ResultDescriptorFileName)); os.IsNotExist(err) {
@@ -138,8 +139,8 @@ func ExportArtifacts(artifacts []gradle.Artifact, baseDir string) error {
 			}
 		}
 
-		if err := artifact.Export(exportDir); err != nil {
-			log.Warnf("failed to export artifact (%s), error: %v", artifact.Name, err)
+		if err := command.CopyFile(path, filepath.Join(exportDir, name)); err != nil {
+			log.Warnf("failed to export artifact (%s), error: %v", name, err)
 		}
 	}
 	return nil
