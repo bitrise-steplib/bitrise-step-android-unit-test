@@ -33,9 +33,9 @@ func failf(f string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func getArtifacts(gradleProject gradle.Project, started time.Time, pattern string) (artifacts []gradle.Artifact, err error) {
+func getArtifacts(gradleProject gradle.Project, started time.Time, pattern string, includeModuleName bool) (artifacts []gradle.Artifact, err error) {
 	for _, t := range []time.Time{started, time.Time{}} {
-		artifacts, err = gradleProject.FindDirs(t, pattern, true)
+		artifacts, err = gradleProject.FindDirs(t, pattern, includeModuleName)
 		if err != nil {
 			return
 		}
@@ -182,7 +182,7 @@ func main() {
 	log.Infof("Export reports:")
 	fmt.Println()
 
-	reports, err := getArtifacts(gradleProject, started, config.ReportPathPattern)
+	reports, err := getArtifacts(gradleProject, started, config.ReportPathPattern, true)
 	if err != nil {
 		failf("Failed to find reports, error: %v", err)
 	}
@@ -196,7 +196,7 @@ func main() {
 	log.Infof("Export results:")
 	fmt.Println()
 
-	results, err := getArtifacts(gradleProject, started, config.ResultPathPattern)
+	results, err := getArtifacts(gradleProject, started, config.ResultPathPattern, true)
 	if err != nil {
 		failf("Failed to find results, error: %v", err)
 	}
