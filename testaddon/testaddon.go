@@ -78,19 +78,16 @@ func generateTestInfoFile(dir string, data []byte) error {
 // ExportArtifacts exports the artifacts in a directory structure rooted at the
 // specified directory. The directory where each artifact is exported depends
 // on which module and build variant produced it.
-func ExportArtifacts(artifacts map[string]string, baseDir string) error {
-	for path, name := range artifacts {
+func ExportArtifacts(path, name, baseDir string) error {
 		log.Debugf("processing artifact: %s", path)
 		module, err := getModule(path)
 		if err != nil {
-			log.Warnf("skipping artifact (%s): %s", path, err)
-			continue
+			return fmt.Errorf("skipping artifact (%s): %s", path, err)
 		}
 
 		variant, err := extractVariant(path)
 		if err != nil {
-			log.Warnf("skipping artifact (%s): could not extract variant name: %s", path, err)
-			continue
+			return fmt.Errorf("skipping artifact (%s): could not extract variant name: %s", path, err)
 		}
 
 		log.Debugf("artifact (%s) produced by %s variant", path, variant)
@@ -98,24 +95,22 @@ func ExportArtifacts(artifacts map[string]string, baseDir string) error {
 		exportDir := strings.Join([]string{baseDir, uniqueDir}, "/")
 
 		if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
-			log.Warnf("skipping artifact (%s): could not ensure unique export dir (%s): %s", path, exportDir, err)
+			return fmt.Errorf("skipping artifact (%s): could not ensure unique export dir (%s): %s", path, exportDir, err)
 		}
 
 		if _, err := os.Stat(filepath.Join(exportDir, ResultDescriptorFileName)); os.IsNotExist(err) {
 			m := map[string]string{"test-name": uniqueDir}
 			data, err := json.Marshal(m)
 			if err != nil {
-				log.Warnf("create test info descriptor: json marshal data (%s): %s", m, err)
-				continue
+				return fmt.Errorf("create test info descriptor: json marshal data (%s): %s", m, err)
 			}
 			if err := generateTestInfoFile(exportDir, data); err != nil {
-				log.Warnf("create test info descriptor: generate file: %s", err)
+				return fmt.Errorf("create test info descriptor: generate file: %s", err)
 			}
 		}
 
 		if err := command.CopyFile(path, filepath.Join(exportDir, name)); err != nil {
-			log.Warnf("failed to export artifact (%s), error: %v", name, err)
+			return fmt.Errorf("failed to export artifact (%s), error: %v", name, err)
 		}
-	}
 	return nil
 }

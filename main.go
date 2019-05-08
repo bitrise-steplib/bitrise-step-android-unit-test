@@ -220,8 +220,10 @@ func main() {
 	}
 
 	if baseDir := os.Getenv("BITRISE_TEST_DEPLOY_DIR"); baseDir != "" {
-		if err := testaddon.ExportArtifacts(artifactsToMap(resultXMLs), baseDir); err != nil {
-			failf("Failed to export results for test addon, error: %v", err)
+		for _, artifact := range resultXMLs {
+			if err := testaddon.ExportArtifacts(artifact.Path, artifact.Name, baseDir); err != nil {
+				failf("Failed to export results for test addon, error: %v", err)
+			}
 		}
 	} else {
 		log.Warnf("$BITRISE_TEST_DEPLOY_DIR not set. Could not export test results for test addon.")
