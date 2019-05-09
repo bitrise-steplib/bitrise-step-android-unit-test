@@ -226,7 +226,7 @@ func main() {
 				failf("Failed to export results for test addon, error: %v", err)
 			}
 
-			if err := testaddon.ExportArtifacts(artifact.Path, artifact.Name, baseDir, uniqueDir); err != nil {
+			if err := testaddon.ExportArtifacts(artifact.Path, baseDir, uniqueDir); err != nil {
 				failf("Failed to export results for test addon, error: %v", err)
 			}
 		}

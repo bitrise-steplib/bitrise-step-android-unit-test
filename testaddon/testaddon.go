@@ -39,7 +39,7 @@ func generateTestInfoFile(dir string, data []byte) error {
 // ExportArtifacts exports the artifacts in a directory structure rooted at the
 // specified directory. The directory where each artifact is exported depends
 // on which module and build variant produced it.
-func ExportArtifacts(path, name, baseDir, uniqueDir string) error {
+func ExportArtifacts(path, baseDir, uniqueDir string) error {
 		exportDir := strings.Join([]string{baseDir, uniqueDir}, "/")
 
 		if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
@@ -57,6 +57,7 @@ func ExportArtifacts(path, name, baseDir, uniqueDir string) error {
 			}
 		}
 
+		name := filepath.Base(path)
 		if err := command.CopyFile(path, filepath.Join(exportDir, name)); err != nil {
 			return fmt.Errorf("failed to export artifact (%s), error: %v", name, err)
 		}
