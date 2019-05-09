@@ -49,7 +49,7 @@ func getVariant(path string) (string, error) {
 }
 
 // getUniqueDir returns the unique subdirectory inside the test addon export diroctory for a given artifact.
-func getUniqueDir(path, baseDir string) (string, error) {
+func getUniqueDir(path string) (string, error) {
 	log.Debugf("processing artifact: %s", path)
 	module, err := getModule(path)
 	if err != nil {

@@ -221,7 +221,7 @@ func main() {
 
 	if baseDir := os.Getenv("BITRISE_TEST_DEPLOY_DIR"); baseDir != "" {
 		for _, artifact := range resultXMLs {
-			uniqueDir, err := getUniqueDir(artifact.Path, baseDir)
+			uniqueDir, err := getUniqueDir(artifact.Path)
 			if err != nil {
 				failf("Failed to export results for test addon, error: %v", err)
 			}
