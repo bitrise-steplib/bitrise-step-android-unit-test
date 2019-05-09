@@ -8,7 +8,8 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 )
 
-// getModule deduces the module name from a path like:
+// getModule returns the name of the module a given test result artifact was produced by
+// based of the artifacts path.
 // path example: <PATH_TO_YOUR_PROJECT>/<MODULE_NAME>/build/test-results/testDemoDebugUnitTest/TEST-example.com.helloworld.ExampleUnitTest.xml
 func getModule(path string) (string, error) {
 	parts := strings.Split(path, "/")
@@ -24,8 +25,10 @@ func getModule(path string) (string, error) {
 	return parts[i-2], nil
 }
 
+// getVariant returns the name of the build variant a given test result artifact was produced by
+// based of the artifacts path.
+// path example: <PATH_TO_YOUR_PROJECT>/<MODULE_NAME>/build/test-results/testDemoDebugUnitTest/TEST-example.com.helloworld.ExampleUnitTest.xml
 func getVariant(path string) (string, error) {
-	// path example: <PATH_TO_YOUR_PROJECT>/<MODULE_NAME>/build/test-results/testDemoDebugUnitTest/TEST-example.com.helloworld.ExampleUnitTest.xml
 	parts := strings.Split(path, "/")
 	i := len(parts) - 1
 	for i > 0 && parts[i] != "test-results" {
@@ -45,6 +48,7 @@ func getVariant(path string) (string, error) {
 	return string(runes), nil
 }
 
+// getUniqueDir returns the unique subdirectory inside the test addon export diroctory for a given artifact.
 func getUniqueDir(path, baseDir string) (string, error) {
 	log.Debugf("processing artifact: %s", path)
 	module, err := getModule(path)
