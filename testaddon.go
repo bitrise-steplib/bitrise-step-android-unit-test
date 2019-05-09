@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
-
-	"github.com/bitrise-io/go-utils/log"
 )
 
 // getModule returns the name of the module a given test result artifact was produced by
@@ -19,7 +17,7 @@ func getModule(path string) (string, error) {
 	}
 
 	if i == 0 {
-		return "", fmt.Errorf("could not determine module based on path")
+		return "", fmt.Errorf("path (%s) does not contain 'test-results' folder")
 	}
 
 	return parts[i-2], nil
@@ -36,7 +34,7 @@ func getVariant(path string) (string, error) {
 	}
 
 	if i == 0 {
-		return "", fmt.Errorf("could not determine variant based on path")
+		return "", fmt.Errorf("path (%s) does not contain 'test-results' folder")
 	}
 
 	variant := parts[i+1]
@@ -50,17 +48,15 @@ func getVariant(path string) (string, error) {
 
 // getUniqueDir returns the unique subdirectory inside the test addon export diroctory for a given artifact.
 func getUniqueDir(path string) (string, error) {
-	log.Debugf("processing artifact: %s", path)
 	module, err := getModule(path)
 	if err != nil {
-		return "", fmt.Errorf("skipping artifact (%s): %s", path, err)
+		return "", fmt.Errorf("get module from path (%s): %s", path, err)
 	}
 
 	variant, err := getVariant(path)
 	if err != nil {
-		return "", fmt.Errorf("skipping artifact (%s): could not extract variant name: %s", path, err)
+		return "", fmt.Errorf("get variant from path (%s): %s", path, err)
 	}
 
-	log.Debugf("artifact (%s) produced by %s variant", path, variant)
 	return module + "-" + variant, nil
 }

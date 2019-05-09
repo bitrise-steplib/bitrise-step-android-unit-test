@@ -221,17 +221,18 @@ func main() {
 
 	if baseDir := os.Getenv("BITRISE_TEST_DEPLOY_DIR"); baseDir != "" {
 		for _, artifact := range resultXMLs {
+			log.Debugf("processing artifact: %s", artifact.Path)
 			uniqueDir, err := getUniqueDir(artifact.Path)
 			if err != nil {
-				failf("Failed to export results for test addon, error: %v", err)
+				log.Warnf("Failed to export test results for test addon: cannot get export directory for artifact (%s): %s", err)
 			}
 
 			if err := testaddon.ExportArtifact(artifact.Path, baseDir, uniqueDir); err != nil {
-				failf("Failed to export results for test addon, error: %v", err)
+				log.Warnf("Failed to export test results for test addon: %s", err)
 			}
 		}
 	} else {
-		log.Warnf("$BITRISE_TEST_DEPLOY_DIR not set. Could not export test results for test addon.")
+		log.Warnf("Failed to export test results for test addon: $BITRISE_TEST_DEPLOY_DIR not set.")
 	}
 
 	fmt.Println()
