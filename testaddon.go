@@ -24,7 +24,7 @@ func getModule(path string) (string, error) {
 	return parts[i-2], nil
 }
 
-func extractVariant(path string) (string, error) {
+func getVariant(path string) (string, error) {
 	// path example: <PATH_TO_YOUR_PROJECT>/<MODULE_NAME>/build/test-results/testDemoDebugUnitTest/TEST-example.com.helloworld.ExampleUnitTest.xml
 	parts := strings.Split(path, "/")
 	i := len(parts) - 1
@@ -52,7 +52,7 @@ func getUniqueDir(path, baseDir string) (string, error) {
 		return "", fmt.Errorf("skipping artifact (%s): %s", path, err)
 	}
 
-	variant, err := extractVariant(path)
+	variant, err := getVariant(path)
 	if err != nil {
 		return "", fmt.Errorf("skipping artifact (%s): could not extract variant name: %s", path, err)
 	}
