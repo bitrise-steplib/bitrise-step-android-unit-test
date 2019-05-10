@@ -109,14 +109,6 @@ func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle
 	return filteredVariants, nil
 }
 
-func artifactsToMap(artifacts []gradle.Artifact) map[string]string {
-	var m = make(map[string]string)
-	for _, a := range artifacts {
-		m[a.Path] = a.Name
-	}
-	return m
-}
-
 func main() {
 	var config Configs
 
