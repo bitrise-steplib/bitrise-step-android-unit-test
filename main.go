@@ -230,7 +230,7 @@ func main() {
 				log.Warnf("Failed to export test results for test addon: %s", err)
 			}
 		}
-		log.Printf("  Exporting test results to test addon successful", )
+		log.Printf("  Exporting test results to test addon successful [ %s ] ", baseDir)
 	}
 
 	if testErr != nil {
