@@ -219,7 +219,7 @@ func main() {
 		failf("Failed to find test result XMLs, error: %v", err)
 	}
 
-	if baseDir := os.Getenv("BITRISE_TEST_DEPLOY_DIR"); baseDir != "" {
+	if baseDir := os.Getenv("BITRISE_TEST_RESULT_DIR"); baseDir != "" {
 		for _, artifact := range resultXMLs {
 			uniqueDir, err := getUniqueDir(artifact.Path)
 			if err != nil {
