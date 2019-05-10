@@ -17,7 +17,7 @@ func getModule(path string) (string, error) {
 	}
 
 	if i == 0 {
-		return "", fmt.Errorf("path (%s) does not contain 'test-results' folder")
+		return "", fmt.Errorf("path (%s) does not contain 'test-results' folder", path)
 	}
 
 	return parts[i-2], nil
@@ -34,7 +34,7 @@ func getVariant(path string) (string, error) {
 	}
 
 	if i == 0 {
-		return "", fmt.Errorf("path (%s) does not contain 'test-results' folder")
+		return "", fmt.Errorf("path (%s) does not contain 'test-results' folder", path)
 	}
 
 	variant := parts[i+1]
