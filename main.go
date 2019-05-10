@@ -216,22 +216,23 @@ func main() {
 
 	resultXMLs, err := getArtifacts(gradleProject, started, resultArtifactPathPattern, false, false)
 	if err != nil {
-		failf("Failed to find test result XMLs, error: %v", err)
-	}
-
-	if baseDir := os.Getenv("BITRISE_TEST_RESULT_DIR"); baseDir != "" {
-		for _, artifact := range resultXMLs {
-			uniqueDir, err := getUniqueDir(artifact.Path)
-			if err != nil {
-				log.Warnf("Failed to export test results for test addon: cannot get export directory for artifact (%s): %s", err)
+		log.Warnf("Failed to find test result XMLs, error: %s", err)
+	} else {
+		if baseDir := os.Getenv("BITRISE_TEST_RESULT_DIR"); baseDir != "" {
+			for _, artifact := range resultXMLs {
+				uniqueDir, err := getUniqueDir(artifact.Path)
+				if err != nil {
+					log.Warnf("Failed to export test results for test addon: cannot get export directory for artifact (%s): %s", err)
+				}
+	
+				if err := testaddon.ExportArtifact(artifact.Path, baseDir, uniqueDir); err != nil {
+					log.Warnf("Failed to export test results for test addon: %s", err)
+				}
 			}
-
-			if err := testaddon.ExportArtifact(artifact.Path, baseDir, uniqueDir); err != nil {
-				log.Warnf("Failed to export test results for test addon: %s", err)
-			}
+			log.Printf("  Exporting test results to test addon successful [ %s ] ", baseDir)
 		}
-		log.Printf("  Exporting test results to test addon successful [ %s ] ", baseDir)
 	}
+
 
 	if testErr != nil {
 		os.Exit(1)
