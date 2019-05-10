@@ -18,6 +18,10 @@ func getUniqueDir(path string) (string, error) {
 		return "", fmt.Errorf("path (%s) does not contain 'test-results' folder", path)
 	}
 
+	if i+1 > len(parts) {
+		return "", fmt.Errorf("get variant name: out of index error")
+	}
+
 	variant := parts[i+1]
 	variant = strings.TrimPrefix(variant, "test")
 	variant = strings.TrimSuffix(variant, "UnitTest")
@@ -26,6 +30,9 @@ func getUniqueDir(path string) (string, error) {
 	runes[0] = unicode.ToLower(runes[0])
 	variant = string(runes)
 
+	if i < 2 {
+		return "", fmt.Errorf("get module name: out of index error")
+	}
 	module := parts[i-2]
 
 	return module + "-" + variant, nil
