@@ -223,6 +223,7 @@ func main() {
 				uniqueDir, err := getUniqueDir(artifact.Path)
 				if err != nil {
 					log.Warnf("Failed to export test results for test addon: cannot get export directory for artifact (%s): %s", err)
+					continue
 				}
 	
 				if err := testaddon.ExportArtifact(artifact.Path, baseDir, uniqueDir); err != nil {
