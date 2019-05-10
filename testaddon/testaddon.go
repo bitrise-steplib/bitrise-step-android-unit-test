@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bitrise-io/go-utils/command"
 )
@@ -39,7 +38,7 @@ func generateTestInfoFile(dir string, data []byte) error {
 // ExportArtifact exports artifact found at path in directory uniqueDir,
 // rooted at baseDir.
 func ExportArtifact(path, baseDir, uniqueDir string) error {
-		exportDir := strings.Join([]string{baseDir, uniqueDir}, "/")
+		exportDir := filepath.Join(baseDir, uniqueDir)
 
 		if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
 			return fmt.Errorf("skipping artifact (%s): could not ensure unique export dir (%s): %s", path, exportDir, err)
