@@ -126,17 +126,8 @@ workflows:
             #!/usr/bin/env bash
             set -ex
 
-            echo $BITRISE_TEST_DEPLOY_DIR
-            echo $BITRISE_TEST_RESULT_DIR
-            pwd
-
-            if [ $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/test-info.json" | grep -q .) ]; then
-                echo "${BITRISE_TEST_DEPLOY_DIR} does not contain app-debug/test-info.json."
-                exit 1
-            fi
-
-            if [ $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-release/test-info.json" | grep -q .) ]; then
-                echo "${BITRISE_TEST_DEPLOY_DIR} does not contain app-release/test-info ."
+            if [ $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/test-info.json" | grep -c .) -eq 0 ]; then
+                echo "ERROR: ${BITRISE_TEST_DEPLOY_DIR} does not contain app-debug/test-info.json."
                 exit 1
             fi
 
