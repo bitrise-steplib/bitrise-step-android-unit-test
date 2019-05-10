@@ -231,8 +231,6 @@ func main() {
 			}
 		}
 		log.Printf("  Exporting test results to test addon successful", )
-	} else {
-		log.Warnf("Failed to export test results for test addon: $BITRISE_TEST_DEPLOY_DIR not set.")
 	}
 
 	if testErr != nil {
