@@ -11,10 +11,13 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/cache"
+	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
 	"github.com/bitrise-tools/go-android/gradle"
 	"github.com/bitrise-tools/go-steputils/stepconf"
 	shellquote "github.com/kballard/go-shellquote"
 )
+
+const resultArtifactPathPattern = "*TEST*.xml"
 
 // Configs ...
 type Configs struct {
@@ -32,9 +35,13 @@ func failf(f string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func getArtifacts(gradleProject gradle.Project, started time.Time, pattern string) (artifacts []gradle.Artifact, err error) {
+func getArtifacts(gradleProject gradle.Project, started time.Time, pattern string, includeModuleName bool, isDirectoryMode bool) (artifacts []gradle.Artifact, err error) {
 	for _, t := range []time.Time{started, time.Time{}} {
-		artifacts, err = gradleProject.FindDirs(t, pattern, true)
+		if isDirectoryMode {
+			artifacts, err = gradleProject.FindDirs(t, pattern, includeModuleName)
+		} else {
+			artifacts, err = gradleProject.FindArtifacts(t, pattern, includeModuleName)
+		}
 		if err != nil {
 			return
 		}
@@ -173,7 +180,7 @@ func main() {
 	log.Infof("Export reports:")
 	fmt.Println()
 
-	reports, err := getArtifacts(gradleProject, started, config.ReportPathPattern)
+	reports, err := getArtifacts(gradleProject, started, config.ReportPathPattern, true, true)
 	if err != nil {
 		failf("Failed to find reports, error: %v", err)
 	}
@@ -187,7 +194,7 @@ func main() {
 	log.Infof("Export results:")
 	fmt.Println()
 
-	results, err := getArtifacts(gradleProject, started, config.ResultPathPattern)
+	results, err := getArtifacts(gradleProject, started, config.ResultPathPattern, true, true)
 	if err != nil {
 		failf("Failed to find results, error: %v", err)
 	}
@@ -195,6 +202,30 @@ func main() {
 	if err := exportArtifacts(deployDir, results); err != nil {
 		failf("Failed to export results, error: %v", err)
 	}
+
+	log.Infof("Export test results for test addon:")
+	fmt.Println()
+
+	resultXMLs, err := getArtifacts(gradleProject, started, resultArtifactPathPattern, false, false)
+	if err != nil {
+		log.Warnf("Failed to find test result XMLs, error: %s", err)
+	} else {
+		if baseDir := os.Getenv("BITRISE_TEST_RESULT_DIR"); baseDir != "" {
+			for _, artifact := range resultXMLs {
+				uniqueDir, err := getUniqueDir(artifact.Path)
+				if err != nil {
+					log.Warnf("Failed to export test results for test addon: cannot get export directory for artifact (%s): %s", err)
+					continue
+				}
+	
+				if err := testaddon.ExportArtifact(artifact.Path, baseDir, uniqueDir); err != nil {
+					log.Warnf("Failed to export test results for test addon: %s", err)
+				}
+			}
+			log.Printf("  Exporting test results to test addon successful [ %s ] ", baseDir)
+		}
+	}
+
 
 	if testErr != nil {
 		os.Exit(1)

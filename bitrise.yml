@@ -17,6 +17,7 @@ workflows:
     - test-in-src-dir
     - test-in-root-tmp-dir
     - check-artifacts
+    - check-testaddon-export
 
   test-in-src-dir:
     title: Test android project & mono repo projects in source dir
@@ -99,6 +100,41 @@ workflows:
                 exit 1
             fi
             if [ ! -f $(ls $BITRISE_DEPLOY_DIR/app-test-results-20*.zip) ]; then
+                exit 1
+            fi
+
+  check-testaddon-export:
+    steps:
+    - script:
+        title: purge previous build artifacts
+        inputs:
+        - content: ./gradlew clean
+    - script:
+        title: purge test deploy dir (will always cause ignorable cli error)
+        inputs:
+        - content: rm -rf $BITRISE_TEST_DEPLOY_DIR/*
+    - path::./:
+        title: run step with predefined inputs
+        inputs:
+        - module: app
+        - variant: Debug
+    - script:
+        title: check exported arftifacts
+        is_always_run: true
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+
+            # check directory and test-info.json existense
+            if [ $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/test-info.json" | grep -c .) -eq 0 ]; then
+                echo "ERROR: ${BITRISE_TEST_DEPLOY_DIR} does not contain app-debug/test-info.json."
+                exit 1
+            fi
+
+            # check result xml existense
+            if [ ! $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/TEST.*.xml" | grep -c .) -eq 2 ]; then
+                echo "ERROR: ${BITRISE_TEST_RESULT_DIR}/app-debug does not contain all test result XMLs."
                 exit 1
             fi
 
