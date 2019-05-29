@@ -27,6 +27,10 @@ func getUniqueDir(path string) (string, error) {
 	variant = strings.TrimSuffix(variant, "UnitTest")
 
 	runes := []rune(variant)
+
+	if len(runes) == 0 {
+		return "", fmt.Errorf("get variant name from task name: empty string after trimming")
+	}
 	runes[0] = unicode.ToLower(runes[0])
 	variant = string(runes)
 
