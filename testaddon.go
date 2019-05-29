@@ -43,6 +43,6 @@ func getUniqueDir(path string) (string, error) {
 	module := parts[i-2]
 	ret := module + "-" + variant
 
-	log.Debugf("getUniqueDir(%s): (%s,%s)", path, ret, nil)
+	log.Debugf("getUniqueDir(%s): (%s,%v)", path, ret, nil)
 	return ret, nil
 }
