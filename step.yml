@@ -80,3 +80,13 @@ inputs:
       - "all"
       - "only_deps"
       - "none"
+  - is_debug: "false"
+    opts: 
+      category: Debug
+      title: "Enable Debug Mode"
+      summary: The step will print more verbose logs if enabled.
+      description: The step will print more verbose logs if enabled.
+      is_required: true
+      value_options:
+      - "false"
+      - "true"

@@ -28,6 +28,7 @@ type Configs struct {
 	Module            string `env:"module"`
 	Arguments         string `env:"arguments"`
 	CacheLevel        string `env:"cache_level,opt[none,only_deps,all]"`
+	IsDebug           bool   `env:"is_debug,opt[true,false]"`
 }
 
 func failf(f string, args ...interface{}) {
@@ -111,6 +112,11 @@ func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle
 
 func main() {
 	var config Configs
+
+	if config.IsDebug {
+		log.SetEnableDebugLog(true)
+		log.Debugf("Debug mode enabled")
+	}
 
 	if err := stepconf.Parse(&config); err != nil {
 		failf("Couldn't create step config: %v\n", err)

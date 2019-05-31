@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+
+	"github.com/bitrise-io/go-utils/log"
 )
 
 // getUniqueDir returns the unique subdirectory inside the test addon export diroctory for a given artifact.
 func getUniqueDir(path string) (string, error) {
+	log.Debugf("getUniqueDir(%s)", path)
 	parts := strings.Split(path, "/")
 	i := len(parts) - 1
 	for i > 0 && parts[i] != "test-results" {
@@ -27,6 +30,10 @@ func getUniqueDir(path string) (string, error) {
 	variant = strings.TrimSuffix(variant, "UnitTest")
 
 	runes := []rune(variant)
+
+	if len(runes) == 0 {
+		return "", fmt.Errorf("get variant name from task name: empty string after trimming")
+	}
 	runes[0] = unicode.ToLower(runes[0])
 	variant = string(runes)
 
@@ -34,6 +41,8 @@ func getUniqueDir(path string) (string, error) {
 		return "", fmt.Errorf("get module name: out of index error")
 	}
 	module := parts[i-2]
+	ret := module + "-" + variant
 
-	return module + "-" + variant, nil
+	log.Debugf("getUniqueDir(%s): (%s,%v)", path, ret, nil)
+	return ret, nil
 }
