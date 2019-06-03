@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitrise-io/go-android/gradle"
+	"github.com/bitrise-io/go-steputils/stepconf"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/cache"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
-	"github.com/bitrise-tools/go-android/gradle"
-	"github.com/bitrise-tools/go-steputils/stepconf"
 	shellquote "github.com/kballard/go-shellquote"
 )
 
@@ -223,7 +223,7 @@ func main() {
 					log.Warnf("Failed to export test results for test addon: cannot get export directory for artifact (%s): %s", err)
 					continue
 				}
-	
+
 				if err := testaddon.ExportArtifact(artifact.Path, baseDir, uniqueDir); err != nil {
 					log.Warnf("Failed to export test results for test addon: %s", err)
 				}
@@ -231,7 +231,6 @@ func main() {
 			log.Printf("  Exporting test results to test addon successful [ %s ] ", baseDir)
 		}
 	}
-
 
 	if testErr != nil {
 		os.Exit(1)
