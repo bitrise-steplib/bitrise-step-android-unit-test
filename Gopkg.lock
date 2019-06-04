@@ -3,7 +3,27 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:85393b915166ab4c4adc6578bdfaf778738b1b8a265a2f7555904755199c1d6f"
+  digest = "1:4490bcf821454642055ce07c60088276229717012434863fd172f31268eb6803"
+  name = "github.com/bitrise-io/go-android"
+  packages = ["gradle"]
+  pruneopts = "UT"
+  revision = "8082fe069ed29f394c2fd0724dd6bdc64e5cf6b4"
+
+[[projects]]
+  branch = "master"
+  digest = "1:53c3bf4c89488ab7d4459f4c7bf694dd4e69a5f35bd4d154b11c9673ac2ce040"
+  name = "github.com/bitrise-io/go-steputils"
+  packages = [
+    "cache",
+    "stepconf",
+    "tools",
+  ]
+  pruneopts = "UT"
+  revision = "cecc766da84859e37e780d9d1c416f0f3993e6b1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:6e3532480c569fbeae144d444bf31d598ac804b9081918c5e268199582a9425f"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -18,27 +38,7 @@
     "ziputil",
   ]
   pruneopts = "UT"
-  revision = "2a09aab8380d7842750328aebd5671bcccea89c8"
-
-[[projects]]
-  branch = "master"
-  digest = "1:4490bcf821454642055ce07c60088276229717012434863fd172f31268eb6803"
-  name = "github.com/bitrise-tools/go-android"
-  packages = ["gradle"]
-  pruneopts = "UT"
-  revision = "8082fe069ed29f394c2fd0724dd6bdc64e5cf6b4"
-
-[[projects]]
-  branch = "master"
-  digest = "1:af7ba84c2a92fb5819d5fe643dfaed48cb6b8704914efe8d8644875b1432e413"
-  name = "github.com/bitrise-tools/go-steputils"
-  packages = [
-    "cache",
-    "stepconf",
-    "tools",
-  ]
-  pruneopts = "UT"
-  revision = "ec226b2359fcd806be64f0ad2217d8e741a1ff11"
+  revision = "8898129615c9e407fc6b0e60ea882f2b18ec4dc2"
 
 [[projects]]
   branch = "master"
@@ -60,13 +60,14 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/bitrise-io/go-android/gradle",
+    "github.com/bitrise-io/go-steputils/cache",
+    "github.com/bitrise-io/go-steputils/stepconf",
+    "github.com/bitrise-io/go-utils/command",
     "github.com/bitrise-io/go-utils/fileutil",
     "github.com/bitrise-io/go-utils/log",
     "github.com/bitrise-io/go-utils/pathutil",
     "github.com/bitrise-io/go-utils/sliceutil",
-    "github.com/bitrise-tools/go-android/gradle",
-    "github.com/bitrise-tools/go-steputils/cache",
-    "github.com/bitrise-tools/go-steputils/stepconf",
     "github.com/kballard/go-shellquote",
   ]
   solver-name = "gps-cdcl"
