@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestGetUniqueDir(t *testing.T) {
+func TestGetVariantDir(t *testing.T) {
 	tc := []struct{
 		title string
 		path string
@@ -26,7 +26,7 @@ func TestGetUniqueDir(t *testing.T) {
 	}
 	
 	for _, tt := range tc {
-		str, err := getUniqueDir(tt.path)
+		str, err := getVariantDir(tt.path)
 		if str != tt.wantStr || (err != nil) != tt.isErr {
 			t.Fatalf("%s: got (%s, %s)", tt.title, str, err)
 		}
