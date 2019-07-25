@@ -220,8 +220,8 @@ func main() {
 			for _, artifact := range resultXMLs {
 				uniqueDir, err := getVariantDir(artifact.Path)
 				if err != nil {
-					log.Warnf("Failed to export test results for test addon: cannot get export directory for artifact (%s): %s", err)
-					continue
+					uniqueDir = "other"
+					log.Warnf("Could not determine build variant for test output artifact (%s), exporting to 'other' collection", artifact.Path)
 				}
 
 				if err := testaddon.ExportArtifact(artifact.Path, baseDir, uniqueDir); err != nil {
