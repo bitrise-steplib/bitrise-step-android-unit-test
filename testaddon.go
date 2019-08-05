@@ -8,6 +8,15 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 )
 
+func getExportDir(artifactPath string) string {
+	dir, err := getVariantDir(artifactPath)
+	if err != nil {
+		return "other"
+	}
+	
+	return dir
+}
+
 // getVariantDir returns the unique subdirectory inside the test addon export diroctory for a given artifact.
 func getVariantDir(path string) (string, error) {
 	log.Debugf("getVariantDir(%s)", path)

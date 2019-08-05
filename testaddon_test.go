@@ -33,3 +33,28 @@ func TestGetVariantDir(t *testing.T) {
 	}
 
 }
+
+func TestGetExportDir(t *testing.T) {
+	tc := []struct{
+		title string
+		artifactPath string
+		want string
+	}{
+		{
+			title: "should return 'other' for non mappable result path",
+			artifactPath: "/path/to/non-android/result.xml",
+			want: "other",
+		},
+		{
+			title: "should return string in <module>-<variant> for android result path",
+			artifactPath: "/path/to/app/module/test-results/testDemoDebugUnitTest/result.xml",
+			want: "app-demoDebug",
+		},
+	}
+
+	for _, tt := range tc {
+		if got := getExportDir(tt.artifactPath); got != tt.want {
+			t.Fatalf("%s: got '%s' want '%s'", tt.title, got, tt.want)
+		}
+	}
+}

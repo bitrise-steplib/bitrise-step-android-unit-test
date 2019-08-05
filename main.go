@@ -218,13 +218,9 @@ func main() {
 	} else {
 		if baseDir := os.Getenv("BITRISE_TEST_RESULT_DIR"); baseDir != "" {
 			for _, artifact := range resultXMLs {
-				uniqueDir, err := getVariantDir(artifact.Path)
-				if err != nil {
-					uniqueDir = "other"
-					log.Warnf("Could not determine build variant for test output artifact (%s), exporting to 'other' collection", artifact.Path)
-				}
+				dir := getExportDir(artifact.Path)
 
-				if err := testaddon.ExportArtifact(artifact.Path, baseDir, uniqueDir); err != nil {
+				if err := testaddon.ExportArtifact(artifact.Path, baseDir, dir); err != nil {
 					log.Warnf("Failed to export test results for test addon: %s", err)
 				}
 			}
