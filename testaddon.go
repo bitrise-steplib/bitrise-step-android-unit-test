@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
-
-	"github.com/bitrise-io/go-utils/log"
 )
+
+// OtherDirName is a directory name of non Android Unit test results
+const OtherDirName = "other"
 
 func getExportDir(artifactPath string) string {
 	dir, err := getVariantDir(artifactPath)
 	if err != nil {
-		return "other"
+		return OtherDirName
 	}
 
 	return dir
@@ -19,7 +20,6 @@ func getExportDir(artifactPath string) string {
 
 // getVariantDir returns the unique subdirectory inside the test addon export directory for a given artifact.
 func getVariantDir(path string) (string, error) {
-	log.Debugf("getVariantDir(%s)", path)
 	parts := strings.Split(path, "/")
 	i := len(parts) - 1
 	for i > 0 && parts[i] != "test-results" {
@@ -52,6 +52,5 @@ func getVariantDir(path string) (string, error) {
 	module := parts[i-2]
 	ret := module + "-" + variant
 
-	log.Debugf("getVariantDir(%s): (%s,%v)", path, ret, nil)
 	return ret, nil
 }
