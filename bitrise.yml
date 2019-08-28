@@ -185,7 +185,7 @@ workflows:
         - is_create_path: true
     - script:
         inputs:
-        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL .
+        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL -b code-coverage .
     - install-missing-android-tools:
         inputs:
         - gradlew_path: ./gradlew
