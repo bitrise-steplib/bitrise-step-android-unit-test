@@ -13,11 +13,11 @@ func getExportDir(artifactPath string) string {
 	if err != nil {
 		return "other"
 	}
-	
+
 	return dir
 }
 
-// getVariantDir returns the unique subdirectory inside the test addon export diroctory for a given artifact.
+// getVariantDir returns the unique subdirectory inside the test addon export directory for a given artifact.
 func getVariantDir(path string) (string, error) {
 	log.Debugf("getVariantDir(%s)", path)
 	parts := strings.Split(path, "/")

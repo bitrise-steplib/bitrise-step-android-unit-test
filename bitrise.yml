@@ -43,6 +43,8 @@ workflows:
         - gradlew_path: ./gradlew
     - path::./:
         title: Android Unit Test (monorepo projects in source dir)
+        inputs:
+        - is_debug: "true"
     after-run:
     - check-artifacts
 
@@ -72,6 +74,7 @@ workflows:
         inputs:
         - module: app
         - variant: Debug
+        - is_debug: "true"
     after-run:
     - check-artifacts
 
@@ -95,6 +98,8 @@ workflows:
         - gradlew_path: ./gradlew
     - path::./:
         title: Android Unit Test (android project & mono repo projects in /tmp dir)
+        inputs:
+        - is_debug: "true"
     after-run:
     - check-artifacts
 
@@ -121,6 +126,8 @@ workflows:
         - gradlew_path: ./gradlew
     - path::./:
         title: Android Unit Test (android project with build.gradle.kts)
+        inputs:
+        - is_debug: "true"
     after-run:
     - check-artifacts
     
@@ -195,21 +202,22 @@ workflows:
         inputs:
         - module: app
         - variant: Debug
+        - is_debug: "true"
     - script:
-        title: check exported arftifacts
+        title: check exported artifacts
         is_always_run: true
         inputs:
         - content: |-
             #!/usr/bin/env bash
             set -ex
 
-            # check directory and test-info.json existense
+            # check directory and test-info.json existence
             if [ $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/test-info.json" | grep -c .) -eq 0 ]; then
                 echo "ERROR: ${BITRISE_TEST_DEPLOY_DIR} does not contain app-debug/test-info.json."
                 exit 1
             fi
 
-            # check result xml existense
+            # check result xml existence
             if [ ! $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/TEST.*.xml" | grep -c .) -eq 2 ]; then
                 echo "ERROR: ${BITRISE_TEST_DEPLOY_DIR} does not contain all test result XMLs."
                 exit 1
