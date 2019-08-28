@@ -53,7 +53,7 @@ inputs:
       summary: Extra arguments passed to the gradle task
       description: Extra arguments passed to the gradle task
       is_required: false
-  - report_path_pattern: "*build/reports/tests/"
+  - report_path_pattern: "*build/reports/tests"
     opts:
       category: Options
       title: Local unit test HTML result directory pattern
@@ -76,7 +76,7 @@ inputs:
 
         to export every variant's reports use: `*build/reports/tests/` pattern.
       is_required: true
-  - result_path_pattern: "*build/test-results/"
+  - result_path_pattern: "*build/test-results"
     opts:
       category: Options
       title: Local unit test XML result directory pattern
