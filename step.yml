@@ -67,14 +67,14 @@ inputs:
 
         - `<path_to_your_project>/app/build/reports/tests/testDebugUnitTest`
 
-        this case use: `*build/reports/tests/testDebugUnitTest/` pattern.
+        this case use: `*build/reports/tests/testDebugUnitTest` pattern.
 
         Example 2: app module and NO variant is selected and the HTML reports are generated at:
 
         - `<path_to_your_project>/app/build/reports/tests/testDebugUnitTest`
         - `<path_to_your_project>/app/build/reports/tests/testReleaseUnitTest`
 
-        to export every variant's reports use: `*build/reports/tests/` pattern.
+        to export every variant's reports use: `*build/reports/tests` pattern.
       is_required: true
   - result_path_pattern: "*build/test-results"
     opts:
@@ -90,14 +90,14 @@ inputs:
 
         - `<path_to_your_project>/app/build/test-results/testDebugUnitTest`
 
-        this case use: `*build/test-results/testDebugUnitTest/` pattern.
+        this case use: `*build/test-results/testDebugUnitTest` pattern.
 
         Example 2: app module and NO variant is selected and the XML reports are generated at:
 
         - `<path_to_your_project>/app/build/test-results/testDebugUnitTest`
         - `<path_to_your_project>/app/build/test-results/testReleaseUnitTest`
 
-        to export every variant's reports use: `*build/test-results/` pattern.
+        to export every variant's reports use: `*build/test-results` pattern.
       is_required: true
   - cache_level: "only_deps"
     opts:

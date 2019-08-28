@@ -18,8 +18,6 @@ import (
 	shellquote "github.com/kballard/go-shellquote"
 )
 
-const resultArtifactPathPattern = "*TEST*.xml"
-
 // Configs ...
 type Configs struct {
 	ProjectLocation      string `env:"project_location,dir"`
