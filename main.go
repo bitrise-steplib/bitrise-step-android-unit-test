@@ -223,7 +223,7 @@ func main() {
 		log.Infof("Export XML results for test addon:")
 		fmt.Println()
 
-		exportDirNames := map[string]bool{} // store already used output dir names, to overlapping
+		lastOtherDirIdx := -1
 		xmlResultFilePattern := config.XMLResultDirPattern
 		if !strings.HasSuffix(xmlResultFilePattern, "*.xml") {
 			xmlResultFilePattern += "*.xml"
@@ -236,19 +236,14 @@ func main() {
 			for _, artifact := range resultXMLs {
 				dir := getExportDir(artifact.Path)
 
-				if dir == OtherDirName && exportDirNames[dir] {
+				if dir == OtherDirName {
 					// start indexing other dir name, to avoid overrideing it
 					// e.g.: other, other-1, other-2
-					s := strings.Split(dir, "-")
-					last := s[len(s)-1]
-					idx, err := strconv.Atoi(last)
-					if err != nil {
-						dir = dir + "-1"
-					} else {
-						dir = dir + "-" + strconv.Itoa(idx+1)
+					lastOtherDirIdx++
+					if lastOtherDirIdx > 0 {
+						dir = dir + "-" + strconv.Itoa(lastOtherDirIdx)
 					}
 				}
-				exportDirNames[dir] = true
 
 				if err := testaddon.ExportArtifact(artifact.Path, config.TestResultDir, dir); err != nil {
 					log.Warnf("Failed to export test results for test addon: %s", err)
