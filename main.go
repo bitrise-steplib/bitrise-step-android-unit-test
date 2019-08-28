@@ -135,14 +135,9 @@ func main() {
 	}
 
 	stepconf.Print(config)
-
-	if config.IsDebug {
-		log.SetEnableDebugLog(true)
-		log.Debugf("Debug mode enabled")
-	}
-
-	log.Printf("- Deploy dir: %s", config.DeployDir)
 	fmt.Println()
+
+	log.SetEnableDebugLog(config.IsDebug)
 
 	gradleProject, err := gradle.NewProject(config.ProjectLocation)
 	if err != nil {
