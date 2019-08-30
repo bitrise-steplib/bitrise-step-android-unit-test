@@ -125,6 +125,30 @@ func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle
 	return filteredVariants, nil
 }
 
+func tryExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int) int {
+	dir := getExportDir(artifactPth)
+
+	if dir == OtherDirName {
+		// start indexing other dir name, to avoid overrideing it
+		// e.g.: other, other-1, other-2
+		lastOtherDirIdx++
+		if lastOtherDirIdx > 0 {
+			dir = dir + "-" + strconv.Itoa(lastOtherDirIdx)
+		}
+	}
+
+	if err := testaddon.ExportArtifact(artifactPth, outputDir, dir); err != nil {
+		log.Warnf("Failed to export test results for test addon: %s", err)
+	} else {
+		src := artifactPth
+		if rel, err := workDirRel(artifactPth); err == nil {
+			src = "./" + rel
+		}
+		log.Printf("  Export [%s => %s]", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifactPth)))
+	}
+	return lastOtherDirIdx
+}
+
 func main() {
 	var config Configs
 
@@ -221,7 +245,6 @@ func main() {
 		log.Infof("Export XML results for test addon:")
 		fmt.Println()
 
-		lastOtherDirIdx := -1
 		xmlResultFilePattern := config.XMLResultDirPattern
 		if !strings.HasSuffix(xmlResultFilePattern, "*.xml") {
 			xmlResultFilePattern += "*.xml"
@@ -231,27 +254,9 @@ func main() {
 		if err != nil {
 			log.Warnf("Failed to find test XML test results, error: %s", err)
 		} else {
+			lastOtherDirIdx := -1
 			for _, artifact := range resultXMLs {
-				dir := getExportDir(artifact.Path)
-
-				if dir == OtherDirName {
-					// start indexing other dir name, to avoid overrideing it
-					// e.g.: other, other-1, other-2
-					lastOtherDirIdx++
-					if lastOtherDirIdx > 0 {
-						dir = dir + "-" + strconv.Itoa(lastOtherDirIdx)
-					}
-				}
-
-				if err := testaddon.ExportArtifact(artifact.Path, config.TestResultDir, dir); err != nil {
-					log.Warnf("Failed to export test results for test addon: %s", err)
-				} else {
-					src := artifact.Path
-					if rel, err := workDirRel(artifact.Path); err == nil {
-						src = "./" + rel
-					}
-					log.Printf("  Export [%s => %s]", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifact.Path)))
-				}
+				lastOtherDirIdx = tryExportTestAddonArtifact(artifact.Path, config.TestResultDir, lastOtherDirIdx)
 			}
 		}
 	}

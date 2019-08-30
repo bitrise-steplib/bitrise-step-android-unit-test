@@ -58,7 +58,8 @@ inputs:
       category: Options
       title: Local unit test HTML result directory pattern
       description: |-
-        The step will use this pattern to export __Local unit test HTML results__.
+        The step will use this pattern to export __Local unit test HTML results__.  
+        The whole HTML results directory will be zipped and moved to the `$BITRISE_DEPLOY_DIR`.
 
         You need to override this input if you have custom output dir set for Local unit test HTML results.  
         The pattern needs to be relative to the selected module's directory.
@@ -81,7 +82,9 @@ inputs:
       category: Options
       title: Local unit test XML result directory pattern
       description: |-
-        The step will use this pattern to export __Local unit test XML results__.
+        The step will use this pattern to export __Local unit test XML results__.  
+        The whole XML results directory will be zipped and moved to the `$BITRISE_DEPLOY_DIR`  
+        and the result files will be deployed to the Ship Addon.
 
         You need to override this input if you have custom output dir set for Local unit test XML results.  
         The pattern needs to be relative to the selected module's directory.

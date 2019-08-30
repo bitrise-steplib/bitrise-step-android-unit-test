@@ -5,26 +5,38 @@ import (
 )
 
 func TestGetVariantDir(t *testing.T) {
-	tc := []struct{
-		title string
-		path string
+	tc := []struct {
+		title   string
+		path    string
 		wantStr string
-		isErr bool
+		isErr   bool
 	}{
 		{
-			title: "should return error on empty string",
-			path: "",
-			wantStr: "",
-			isErr: true, 
+			title:   "should return variant dir",
+			path:    "./app/build/test-results/testDebugUnitTest/TEST-sample.results.test.multiple.bitrise.com.multipletestresultssample.UnitTest0.xml",
+			wantStr: "app-debug",
+			isErr:   false,
 		},
 		{
-			title: "should return error if artifact path ends in test results folder with trailing slash",
-			path: "/path/to/test-results/",
+			title:   "should return error on empty string",
+			path:    "",
 			wantStr: "",
-			isErr: true, 
+			isErr:   true,
+		},
+		{
+			title:   "should return error for non default Local Android Unit result XML path",
+			path:    "/path/to/test-results/",
+			wantStr: "",
+			isErr:   true,
+		},
+		{
+			title:   "should return error for non default Local Android Unit result XML path",
+			path:    "./app/build/test-results/jacocoTestReleaseUnitTestReport/jacocoTestReleaseUnitTestReport.xml",
+			wantStr: "",
+			isErr:   true,
 		},
 	}
-	
+
 	for _, tt := range tc {
 		str, err := getVariantDir(tt.path)
 		if str != tt.wantStr || (err != nil) != tt.isErr {
@@ -35,20 +47,20 @@ func TestGetVariantDir(t *testing.T) {
 }
 
 func TestGetExportDir(t *testing.T) {
-	tc := []struct{
-		title string
+	tc := []struct {
+		title        string
 		artifactPath string
-		want string
+		want         string
 	}{
 		{
-			title: "should return 'other' for non mappable result path",
-			artifactPath: "/path/to/non-android/result.xml",
-			want: "other",
+			title:        "should return 'other' for non mappable result path",
+			artifactPath: "./app/build/test-results/jacocoTestReleaseUnitTestReport/jacocoTestReleaseUnitTestReport.xml",
+			want:         "other",
 		},
 		{
-			title: "should return string in <module>-<variant> for android result path",
-			artifactPath: "/path/to/app/module/test-results/testDemoDebugUnitTest/result.xml",
-			want: "app-demoDebug",
+			title:        "should return string in <module>-<variant> for android result path",
+			artifactPath: "./app/build/test-results/testDemoDebugUnitTest/TEST-sample.results.test.multiple.bitrise.com.multipletestresultssample.UnitTest0.xml",
+			want:         "app-demoDebug",
 		},
 	}
 
