@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,18 +18,19 @@ import (
 	shellquote "github.com/kballard/go-shellquote"
 )
 
-const resultArtifactPathPattern = "*TEST*.xml"
-
 // Configs ...
 type Configs struct {
-	ProjectLocation   string `env:"project_location,dir"`
-	ReportPathPattern string `env:"report_path_pattern"`
-	ResultPathPattern string `env:"result_path_pattern"`
-	Variant           string `env:"variant"`
-	Module            string `env:"module"`
-	Arguments         string `env:"arguments"`
-	CacheLevel        string `env:"cache_level,opt[none,only_deps,all]"`
-	IsDebug           bool   `env:"is_debug,opt[true,false]"`
+	ProjectLocation      string `env:"project_location,dir"`
+	HTMLResultDirPattern string `env:"report_path_pattern"`
+	XMLResultDirPattern  string `env:"result_path_pattern"`
+	Variant              string `env:"variant"`
+	Module               string `env:"module"`
+	Arguments            string `env:"arguments"`
+	CacheLevel           string `env:"cache_level,opt[none,only_deps,all]"`
+	IsDebug              bool   `env:"is_debug,opt[true,false]"`
+
+	DeployDir     string `env:"BITRISE_DEPLOY_DIR"`
+	TestResultDir string `env:"BITRISE_TEST_RESULT_DIR"`
 }
 
 func failf(f string, args ...interface{}) {
@@ -60,6 +62,14 @@ func getArtifacts(gradleProject gradle.Project, started time.Time, pattern strin
 	return
 }
 
+func workDirRel(pth string) (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Rel(wd, pth)
+}
+
 func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
 	for _, artifact := range artifacts {
 		artifact.Name += ".zip"
@@ -73,7 +83,12 @@ func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
 			artifact.Name = fmt.Sprintf("%s-%s%s", strings.TrimSuffix(artifact.Name, ".zip"), timestamp, ".zip")
 		}
 
-		log.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", filepath.Base(artifact.Path), artifact.Name)
+		src := filepath.Base(artifact.Path)
+		if rel, err := workDirRel(artifact.Path); err == nil {
+			src = "./" + rel
+		}
+
+		log.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", src, artifact.Name)
 
 		if err := artifact.ExportZIP(deployDir); err != nil {
 			log.Warnf("failed to export artifact (%s), error: %v", artifact.Path, err)
@@ -110,24 +125,41 @@ func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle
 	return filteredVariants, nil
 }
 
+func tryExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int) int {
+	dir := getExportDir(artifactPth)
+
+	if dir == OtherDirName {
+		// start indexing other dir name, to avoid overrideing it
+		// e.g.: other, other-1, other-2
+		lastOtherDirIdx++
+		if lastOtherDirIdx > 0 {
+			dir = dir + "-" + strconv.Itoa(lastOtherDirIdx)
+		}
+	}
+
+	if err := testaddon.ExportArtifact(artifactPth, outputDir, dir); err != nil {
+		log.Warnf("Failed to export test results for test addon: %s", err)
+	} else {
+		src := artifactPth
+		if rel, err := workDirRel(artifactPth); err == nil {
+			src = "./" + rel
+		}
+		log.Printf("  Export [%s => %s]", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifactPth)))
+	}
+	return lastOtherDirIdx
+}
+
 func main() {
 	var config Configs
-
-	if config.IsDebug {
-		log.SetEnableDebugLog(true)
-		log.Debugf("Debug mode enabled")
-	}
 
 	if err := stepconf.Parse(&config); err != nil {
 		failf("Couldn't create step config: %v\n", err)
 	}
 
 	stepconf.Print(config)
-
-	deployDir := os.Getenv("BITRISE_DEPLOY_DIR")
-
-	log.Printf("- Deploy dir: %s", deployDir)
 	fmt.Println()
+
+	log.SetEnableDebugLog(config.IsDebug)
 
 	gradleProject, err := gradle.NewProject(config.ProjectLocation)
 	if err != nil {
@@ -182,53 +214,50 @@ func main() {
 		log.Errorf("Test task failed, error: %v", testErr)
 	}
 	fmt.Println()
-
-	log.Infof("Export reports:")
+	log.Infof("Export HTML results:")
 	fmt.Println()
 
-	reports, err := getArtifacts(gradleProject, started, config.ReportPathPattern, true, true)
+	reports, err := getArtifacts(gradleProject, started, config.HTMLResultDirPattern, true, true)
 	if err != nil {
 		failf("Failed to find reports, error: %v", err)
 	}
 
-	if err := exportArtifacts(deployDir, reports); err != nil {
+	if err := exportArtifacts(config.DeployDir, reports); err != nil {
 		failf("Failed to export reports, error: %v", err)
 	}
 
 	fmt.Println()
-
-	log.Infof("Export results:")
+	log.Infof("Export XML results:")
 	fmt.Println()
 
-	results, err := getArtifacts(gradleProject, started, config.ResultPathPattern, true, true)
+	results, err := getArtifacts(gradleProject, started, config.XMLResultDirPattern, true, true)
 	if err != nil {
 		failf("Failed to find results, error: %v", err)
 	}
 
-	if err := exportArtifacts(deployDir, results); err != nil {
+	if err := exportArtifacts(config.DeployDir, results); err != nil {
 		failf("Failed to export results, error: %v", err)
 	}
 
-	log.Infof("Export test results for test addon:")
-	fmt.Println()
+	if config.TestResultDir != "" {
+		// Test Addon is turned on
+		fmt.Println()
+		log.Infof("Export XML results for test addon:")
+		fmt.Println()
 
-	resultXMLs, err := getArtifacts(gradleProject, started, resultArtifactPathPattern, false, false)
-	if err != nil {
-		log.Warnf("Failed to find test result XMLs, error: %s", err)
-	} else {
-		if baseDir := os.Getenv("BITRISE_TEST_RESULT_DIR"); baseDir != "" {
+		xmlResultFilePattern := config.XMLResultDirPattern
+		if !strings.HasSuffix(xmlResultFilePattern, "*.xml") {
+			xmlResultFilePattern += "*.xml"
+		}
+
+		resultXMLs, err := getArtifacts(gradleProject, started, xmlResultFilePattern, false, false)
+		if err != nil {
+			log.Warnf("Failed to find test XML test results, error: %s", err)
+		} else {
+			lastOtherDirIdx := -1
 			for _, artifact := range resultXMLs {
-				uniqueDir, err := getUniqueDir(artifact.Path)
-				if err != nil {
-					log.Warnf("Failed to export test results for test addon: cannot get export directory for artifact (%s): %s", err)
-					continue
-				}
-
-				if err := testaddon.ExportArtifact(artifact.Path, baseDir, uniqueDir); err != nil {
-					log.Warnf("Failed to export test results for test addon: %s", err)
-				}
+				lastOtherDirIdx = tryExportTestAddonArtifact(artifact.Path, config.TestResultDir, lastOtherDirIdx)
 			}
-			log.Printf("  Exporting test results to test addon successful [ %s ] ", baseDir)
 		}
 	}
 
