@@ -24,20 +24,22 @@ const (
 	LevelAll  = Level("all")
 )
 
-// Collect ...
-func Collect(projectRoot string, cacheLevel Level) error {
+// Deps ...
+func Deps(dir string, cacheLevel Level) ([]string, []string, error) {
+	var includePths []string
+	var excludePths []string
+
 	if cacheLevel != LevelNone {
-		gradleCache := cache.New()
 		homeDir := pathutil.UserHomeDir()
 
-		projectRoot, err := filepath.Abs(projectRoot)
+		projectRoot, err := filepath.Abs(dir)
 		if err != nil {
-			return fmt.Errorf("cache collection skipped: failed to determine project root path")
+			return nil, nil, fmt.Errorf("cache collection skipped: failed to determine project root path")
 		}
 
 		lockFilePath := filepath.Join(projectRoot, "gradle.deps")
 
-		excludePths := []string{
+		excludePths = []string{
 			"~/.gradle/**",
 			"~/.android/build-cache/**",
 			"*.lock",
@@ -54,8 +56,6 @@ func Collect(projectRoot string, cacheLevel Level) error {
 			"!*.apk",
 		}
 
-		var includePths []string
-
 		if cacheLevel == LevelAll || cacheLevel == LevelDeps {
 			lockfileContent := ""
 			if err := filepath.Walk(projectRoot, func(path string, f os.FileInfo, err error) error {
@@ -68,10 +68,10 @@ func Collect(projectRoot string, cacheLevel Level) error {
 				}
 				return nil
 			}); err != nil {
-				return fmt.Errorf("dependency map generation skipped: failed to collect dependencies")
+				return nil, nil, fmt.Errorf("dependency map generation skipped: failed to collect dependencies")
 			}
 			if err := fileutil.WriteStringToFile(lockFilePath, lockfileContent); err != nil {
-				return fmt.Errorf("dependency map generation skipped: failed to write lockfile, error: %s", err)
+				return nil, nil, fmt.Errorf("dependency map generation skipped: failed to write lockfile, error: %s", err)
 			}
 
 			includePths = append(includePths, fmt.Sprintf("%s -> %s", filepath.Join(homeDir, ".gradle"), lockFilePath))
@@ -93,16 +93,31 @@ func Collect(projectRoot string, cacheLevel Level) error {
 				}
 				return nil
 			}); err != nil {
-				return fmt.Errorf("cache collection skipped: failed to determine cache paths")
+				return nil, nil, fmt.Errorf("cache collection skipped: failed to determine cache paths")
 			}
 		}
-		gradleCache.IncludePath(strings.Join(includePths, "\n"))
-		gradleCache.ExcludePath(strings.Join(excludePths, "\n"))
+	}
 
-		if err := gradleCache.Commit(); err != nil {
-			return fmt.Errorf("cache collection skipped: failed to commit cache paths")
+	return includePths, excludePths, nil
+}
+
+// Collect ...
+func Collect(projectRoot string, cacheLevel Level) error {
+	includes, excludes, err := Deps(projectRoot, cacheLevel)
+
+	cache := cache.New()
+	if err != nil {
+		return err
+	} else {
+		for _, item := range includes {
+			cache.IncludePath(item)
+		}
+
+		for _, item := range excludes {
+			cache.ExcludePath(item)
 		}
 	}
+	cache.Commit()
 	return nil
 }
 
