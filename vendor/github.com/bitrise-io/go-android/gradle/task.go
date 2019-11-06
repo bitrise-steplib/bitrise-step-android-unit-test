@@ -44,9 +44,10 @@ lines:
 		var module string
 
 		split := strings.Split(l, ":")
-		if len(split) > 1 {
-			module = split[0]
-			l = split[1]
+		size := len(split)
+		if size > 1 {
+			module = strings.Join(split[:size - 1], ":")
+			l = split[size - 1]
 		}
 		// module removed if any
 		if strings.HasPrefix(l, task.name) {
