@@ -3,11 +3,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4490bcf821454642055ce07c60088276229717012434863fd172f31268eb6803"
+  digest = "1:6f561a11e048a6b3e76fd7c89288e6b078f299afcd2d38e0f9616807ec541fb2"
   name = "github.com/bitrise-io/go-android"
-  packages = ["gradle"]
+  packages = [
+    "cache",
+    "gradle",
+  ]
   pruneopts = "UT"
-  revision = "8082fe069ed29f394c2fd0724dd6bdc64e5cf6b4"
+  revision = "a28433b493561a6575fcec699f93f124d22150d1"
 
 [[projects]]
   branch = "master"
@@ -60,6 +63,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/bitrise-io/go-android/cache",
     "github.com/bitrise-io/go-android/gradle",
     "github.com/bitrise-io/go-steputils/cache",
     "github.com/bitrise-io/go-steputils/stepconf",
