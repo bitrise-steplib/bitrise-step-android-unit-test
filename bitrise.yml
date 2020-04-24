@@ -4,6 +4,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 app:
   envs:
   - SAMPLE_REPO_GIT_CLONE_URL: https://github.com/bitrise-io/android-multiple-test-results-sample.git
+  - SAMPLE_REPO_BRANCH: maintenance
   - SAMPLE_REPO_KOTLIN_GRADLE_URL: https://github.com/bitrise-io/android-gradle-kotlin-dsl.git
   - ORIG_BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR
 
@@ -37,7 +38,7 @@ workflows:
         - is_create_path: true
     - script:
         inputs:
-        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL .
+        - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
     - install-missing-android-tools:
         inputs:
         - gradlew_path: ./gradlew
@@ -65,7 +66,7 @@ workflows:
         - is_create_path: true
     - script:
         inputs:
-        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL .
+        - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
     - install-missing-android-tools:
         inputs:
         - gradlew_path: ./gradlew
@@ -92,7 +93,7 @@ workflows:
         - is_create_path: true
     - script:
         inputs:
-        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL .
+        - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
     - install-missing-android-tools:
         inputs:
         - gradlew_path: ./gradlew
