@@ -74,7 +74,7 @@ workflows:
         title: Android Unit Test (monorepo in source dir, with module and variant set)
         inputs:
         - module: app
-        - variant: Debug
+        - variant: DemoDebug
         - is_debug: "true"
     after-run:
     - check-artifacts
