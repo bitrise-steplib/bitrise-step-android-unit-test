@@ -3,14 +3,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6f561a11e048a6b3e76fd7c89288e6b078f299afcd2d38e0f9616807ec541fb2"
+  digest = "1:984d13321c0b4f6b270bbcdcaaeb08531b6573011c312d6f254bc23449a356b5"
   name = "github.com/bitrise-io/go-android"
   packages = [
     "cache",
     "gradle",
   ]
   pruneopts = "UT"
-  revision = "a28433b493561a6575fcec699f93f124d22150d1"
+  revision = "f3aa5d01386be890dd80a548c3ff149643ef587c"
 
 [[projects]]
   branch = "master"
@@ -22,7 +22,7 @@
     "tools",
   ]
   pruneopts = "UT"
-  revision = "94490ca44ddb645764676a94988f6fc7e3187383"
+  revision = "6d5afa53c7b85b6135e382105116d245b5997ace"
 
 [[projects]]
   branch = "master"
@@ -41,7 +41,15 @@
     "ziputil",
   ]
   pruneopts = "UT"
-  revision = "e212188d99b41373b4ff8b69e7b1f677bc427bde"
+  revision = "0c47c16813a4209321c9d0dba2e75867d6901ff2"
+
+[[projects]]
+  digest = "1:95732e0c27df672b3fdf5cdd8edd18cba5fc07263ef7cd25eaaad4afc4730313"
+  name = "github.com/hashicorp/go-version"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "59da58cfd357de719a4d16dac30481391a56c002"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
