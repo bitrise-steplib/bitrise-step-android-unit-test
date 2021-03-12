@@ -34,17 +34,17 @@ inputs:
     opts:
       title: Module
       summary: |
-        Set the module that you want to test. To see your available modules, please open your project in Android Studio and go to [Project Structure] and see the list on the left.
+        Set the module that you want to test. To see your available modules, please open your project in Android Studio and go to [Project Structure] and see the list on the left. Leave blank to test all modules.
       description: |
-        Set the module that you want to test. To see your available modules, please open your project in Android Studio and go to [Project Structure] and see the list on the left.
+        Set the module that you want to test. To see your available modules, please open your project in Android Studio and go to [Project Structure] and see the list on the left. Leave blank to test all modules.
       is_required: false
   - variant: ""
     opts:
       title: Variant
       summary: |
-        Set the variant that you want to test. To see your available variants, please open your project in Android Studio and go to [Project Structure] -> variants section.
+        Set the variant that you want to test. To see your available variants, please open your project in Android Studio and go to [Project Structure] -> variants section. Leave blank to test all variants.
       description: |
-        Set the variant that you want to test. To see your available variants, please open your project in Android Studio and go to [Project Structure] -> variants section.
+        Set the variant that you want to test. To see your available variants, please open your project in Android Studio and go to [Project Structure] -> variants section. Leave blank to test all variants.
       is_required: false
   - arguments:
     opts:
