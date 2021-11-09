@@ -12,11 +12,13 @@ import (
 	"github.com/bitrise-io/go-android/gradle"
 	utilscache "github.com/bitrise-io/go-steputils/cache"
 	"github.com/bitrise-io/go-steputils/stepconf"
+	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/env"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
-	shellquote "github.com/kballard/go-shellquote"
+	"github.com/kballard/go-shellquote"
 )
 
 // Configs ...
@@ -34,8 +36,11 @@ type Configs struct {
 	TestResultDir string `env:"BITRISE_TEST_RESULT_DIR"`
 }
 
+var cmdFactory = command.NewFactory(env.NewRepository())
+var logger = log.NewLogger()
+
 func failf(f string, args ...interface{}) {
-	log.Errorf(f, args...)
+	logger.Errorf(f, args...)
 	os.Exit(1)
 }
 
@@ -51,13 +56,13 @@ func getArtifacts(gradleProject gradle.Project, started time.Time, pattern strin
 		}
 		if len(artifacts) == 0 {
 			if t == started {
-				log.Warnf("No artifacts found with pattern: %s that has modification time after: %s", pattern, t)
-				log.Warnf("Retrying without modtime check....")
+				logger.Warnf("No artifacts found with pattern: %s that has modification time after: %s", pattern, t)
+				logger.Warnf("Retrying without modtime check....")
 				fmt.Println()
 				continue
 			}
-			log.Warnf("No artifacts found with pattern: %s without modtime check", pattern)
-			log.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
+			logger.Warnf("No artifacts found with pattern: %s without modtime check", pattern)
+			logger.Warnf("If you have changed default report export path in your gradle files then you might need to change ReportPathPattern accordingly.")
 		}
 	}
 	return
@@ -89,10 +94,10 @@ func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
 			src = "./" + rel
 		}
 
-		log.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", src, artifact.Name)
+		logger.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", src, artifact.Name)
 
 		if err := artifact.ExportZIP(deployDir); err != nil {
-			log.Warnf("failed to export artifact (%s), error: %v", artifact.Path, err)
+			logger.Warnf("failed to export artifact (%s), error: %v", artifact.Path, err)
 			continue
 		}
 	}
@@ -139,13 +144,13 @@ func tryExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx i
 	}
 
 	if err := testaddon.ExportArtifact(artifactPth, outputDir, dir); err != nil {
-		log.Warnf("Failed to export test results for test addon: %s", err)
+		logger.Warnf("Failed to export test results for test addon: %s", err)
 	} else {
 		src := artifactPth
 		if rel, err := workDirRel(artifactPth); err == nil {
 			src = "./" + rel
 		}
-		log.Printf("  Export [%s => %s]", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifactPth)))
+		logger.Printf("  Export [%s => %s]", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifactPth)))
 	}
 	return lastOtherDirIdx
 }
@@ -160,19 +165,24 @@ func main() {
 	stepconf.Print(config)
 	fmt.Println()
 
-	log.SetEnableDebugLog(config.IsDebug)
+	logger.EnableDebugLog(config.IsDebug)
 
-	gradleProject, err := gradle.NewProject(config.ProjectLocation)
+	gradleProject, err := gradle.NewProject(config.ProjectLocation, cmdFactory)
 	if err != nil {
 		failf("Failed to open project, error: %s", err)
 	}
 
 	testTask := gradleProject.GetTask("test")
 
-	log.Infof("Variants:")
+	args, err := shellquote.Split(config.Arguments)
+	if err != nil {
+		failf("Failed to parse arguments, error: %s", err)
+	}
+
+	logger.Infof("Variants:")
 	fmt.Println()
 
-	variants, err := testTask.GetVariants()
+	variants, err := testTask.GetVariants(args...)
 	if err != nil {
 		failf("Failed to fetch variants, error: %s", err)
 	}
@@ -183,12 +193,12 @@ func main() {
 	}
 
 	for module, variants := range variants {
-		log.Printf("%s:", module)
+		logger.Printf("%s:", module)
 		for _, variant := range variants {
 			if sliceutil.IsStringInSlice(variant, filteredVariants[module]) {
-				log.Donef("✓ %s", strings.TrimSuffix(variant, "UnitTest"))
+				logger.Donef("✓ %s", strings.TrimSuffix(variant, "UnitTest"))
 			} else {
-				log.Printf("- %s", strings.TrimSuffix(variant, "UnitTest"))
+				logger.Printf("- %s", strings.TrimSuffix(variant, "UnitTest"))
 			}
 		}
 	}
@@ -196,26 +206,21 @@ func main() {
 
 	started := time.Now()
 
-	args, err := shellquote.Split(config.Arguments)
-	if err != nil {
-		failf("Failed to parse arguments, error: %s", err)
-	}
-
 	var testErr error
 
-	log.Infof("Run test:")
+	logger.Infof("Run test:")
 	testCommand := testTask.GetCommand(filteredVariants, args...)
 
 	fmt.Println()
-	log.Donef("$ " + testCommand.PrintableCommandArgs())
+	logger.Donef("$ " + testCommand.PrintableCommandArgs())
 	fmt.Println()
 
 	testErr = testCommand.Run()
 	if testErr != nil {
-		log.Errorf("Test task failed, error: %v", testErr)
+		logger.Errorf("Test task failed, error: %v", testErr)
 	}
 	fmt.Println()
-	log.Infof("Export HTML results:")
+	logger.Infof("Export HTML results:")
 	fmt.Println()
 
 	reports, err := getArtifacts(gradleProject, started, config.HTMLResultDirPattern, true, true)
@@ -228,7 +233,7 @@ func main() {
 	}
 
 	fmt.Println()
-	log.Infof("Export XML results:")
+	logger.Infof("Export XML results:")
 	fmt.Println()
 
 	results, err := getArtifacts(gradleProject, started, config.XMLResultDirPattern, true, true)
@@ -243,7 +248,7 @@ func main() {
 	if config.TestResultDir != "" {
 		// Test Addon is turned on
 		fmt.Println()
-		log.Infof("Export XML results for test addon:")
+		logger.Infof("Export XML results for test addon:")
 		fmt.Println()
 
 		xmlResultFilePattern := config.XMLResultDirPattern
@@ -253,7 +258,7 @@ func main() {
 
 		resultXMLs, err := getArtifacts(gradleProject, started, xmlResultFilePattern, false, false)
 		if err != nil {
-			log.Warnf("Failed to find test XML test results, error: %s", err)
+			logger.Warnf("Failed to find test XML test results, error: %s", err)
 		} else {
 			lastOtherDirIdx := -1
 			for _, artifact := range resultXMLs {
@@ -267,9 +272,9 @@ func main() {
 	}
 
 	fmt.Println()
-	log.Infof("Collecting cache:")
-	if warning := cache.Collect(config.ProjectLocation, utilscache.Level(config.CacheLevel)); warning != nil {
-		log.Warnf("%s", warning)
+	logger.Infof("Collecting cache:")
+	if warning := cache.Collect(config.ProjectLocation, utilscache.Level(config.CacheLevel), cmdFactory); warning != nil {
+		logger.Warnf("%s", warning)
 	}
-	log.Donef("  Done")
+	logger.Donef("  Done")
 }

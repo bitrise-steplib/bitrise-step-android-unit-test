@@ -46,6 +46,7 @@ workflows:
         title: Android Unit Test (monorepo projects in source dir)
         inputs:
         - is_debug: "true"
+        - arguments: --warn
     after-run:
     - check-artifacts
 
