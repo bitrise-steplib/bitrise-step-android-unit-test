@@ -81,7 +81,7 @@ func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
 		artifact.Name += ".zip"
 		exists, err := pathutil.IsPathExists(filepath.Join(deployDir, artifact.Name))
 		if err != nil {
-			return fmt.Errorf("export outputs: failed to check path, error: %v", err)
+			return fmt.Errorf("failed to check path, error: %v", err)
 		}
 
 		if exists {
@@ -126,7 +126,7 @@ func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle
 		}
 	}
 	if len(filteredVariants) == 0 {
-		return nil, fmt.Errorf("variant: %s not found in any module", variant)
+		return nil, fmt.Errorf("variant %s not found in any module", variant)
 	}
 	return filteredVariants, nil
 }
