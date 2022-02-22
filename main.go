@@ -159,7 +159,7 @@ func main() {
 	var config Configs
 
 	if err := stepconf.Parse(&config); err != nil {
-		failf("process config: couldn't create step config: %v\n", err)
+		failf("Process config: couldn't create step config: %v\n", err)
 	}
 
 	stepconf.Print(config)
@@ -169,14 +169,14 @@ func main() {
 
 	gradleProject, err := gradle.NewProject(config.ProjectLocation, cmdFactory)
 	if err != nil {
-		failf("process config: failed to open project, error: %s", err)
+		failf("Process config: failed to open project, error: %s", err)
 	}
 
 	testTask := gradleProject.GetTask("test")
 
 	args, err := shellquote.Split(config.Arguments)
 	if err != nil {
-		failf("process config: failed to parse arguments, error: %s", err)
+		failf("Process config: failed to parse arguments, error: %s", err)
 	}
 
 	logger.Infof("Variants:")
@@ -184,12 +184,12 @@ func main() {
 
 	variants, err := testTask.GetVariants(args...)
 	if err != nil {
-		failf("run: failed to fetch variants, error: %s", err)
+		failf("Run: failed to fetch variants, error: %s", err)
 	}
 
 	filteredVariants, err := filterVariants(config.Module, config.Variant, variants)
 	if err != nil {
-		failf("run: failed to find buildable variants, error: %s", err)
+		failf("Run: failed to find buildable variants, error: %s", err)
 	}
 
 	for module, variants := range variants {
@@ -217,7 +217,7 @@ func main() {
 
 	testErr = testCommand.Run()
 	if testErr != nil {
-		logger.Errorf("run: test task failed, error: %v", testErr)
+		logger.Errorf("Run: test task failed, error: %v", testErr)
 	}
 	fmt.Println()
 	logger.Infof("Export HTML results:")
@@ -225,11 +225,11 @@ func main() {
 
 	reports, err := getArtifacts(gradleProject, started, config.HTMLResultDirPattern, true, true)
 	if err != nil {
-		failf("export outputs: failed to find reports, error: %v", err)
+		failf("Export outputs: failed to find reports, error: %v", err)
 	}
 
 	if err := exportArtifacts(config.DeployDir, reports); err != nil {
-		failf("export outputs: failed to export reports, error: %v", err)
+		failf("Export outputs: failed to export reports, error: %v", err)
 	}
 
 	fmt.Println()
@@ -238,11 +238,11 @@ func main() {
 
 	results, err := getArtifacts(gradleProject, started, config.XMLResultDirPattern, true, true)
 	if err != nil {
-		failf("export outputs: failed to find results, error: %v", err)
+		failf("Export outputs: failed to find results, error: %v", err)
 	}
 
 	if err := exportArtifacts(config.DeployDir, results); err != nil {
-		failf("export outputs: failed to export results, error: %v", err)
+		failf("Export outputs: failed to export results, error: %v", err)
 	}
 
 	if config.TestResultDir != "" {
