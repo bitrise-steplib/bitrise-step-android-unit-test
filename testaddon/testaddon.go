@@ -3,10 +3,10 @@ package testaddon
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/bitrise-io/go-utils/command"
 )
 
 const (
@@ -56,8 +56,37 @@ func ExportArtifact(path, baseDir, uniqueDir string) error {
 	}
 
 	name := filepath.Base(path)
-	if err := command.CopyFile(path, filepath.Join(exportDir, name)); err != nil {
+	if err := copyFile(path, filepath.Join(exportDir, name)); err != nil {
 		return fmt.Errorf("failed to export artifact (%s), error: %v", name, err)
 	}
+	return nil
+}
+
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := srcFile.Close(); err != nil {
+			log.Printf("Failed to close source file (%s): %v", src, err)
+		}
+	}()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := dstFile.Close(); err != nil {
+			log.Printf("Failed to close destination file (%s): %v", dst, err)
+		}
+	}()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

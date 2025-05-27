@@ -4,20 +4,21 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/go-android/cache"
-	"github.com/bitrise-io/go-android/gradle"
-	utilscache "github.com/bitrise-io/go-steputils/cache"
-	"github.com/bitrise-io/go-steputils/stepconf"
-	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/env"
-	"github.com/bitrise-io/go-utils/log"
-	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/sliceutil"
+	"github.com/bitrise-io/go-android/v2/gradle"
+	"github.com/bitrise-io/go-steputils/v2/stepconf"
+	"github.com/bitrise-io/go-utils/v2/command"
+	"github.com/bitrise-io/go-utils/v2/env"
+	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/go-utils/v2/pathutil"
+
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
+	"github.com/bitrise-steplib/steps-deploy-to-bitrise-io/test/converters/junitxml"
+
 	"github.com/kballard/go-shellquote"
 )
 
@@ -29,7 +30,6 @@ type Configs struct {
 	Variant              string `env:"variant"`
 	Module               string `env:"module"`
 	Arguments            string `env:"arguments"`
-	CacheLevel           string `env:"cache_level,opt[none,only_deps,all]"`
 	IsDebug              bool   `env:"is_debug,opt[true,false]"`
 
 	DeployDir     string `env:"BITRISE_DEPLOY_DIR"`
@@ -76,10 +76,10 @@ func workDirRel(pth string) (string, error) {
 	return filepath.Rel(wd, pth)
 }
 
-func exportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
+func exportArtifacts(pathChecker pathutil.PathChecker, deployDir string, artifacts []gradle.Artifact) error {
 	for _, artifact := range artifacts {
 		artifact.Name += ".zip"
-		exists, err := pathutil.IsPathExists(filepath.Join(deployDir, artifact.Name))
+		exists, err := pathChecker.IsPathExists(filepath.Join(deployDir, artifact.Name))
 		if err != nil {
 			return fmt.Errorf("failed to check path, error: %v", err)
 		}
@@ -158,7 +158,11 @@ func tryExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx i
 func main() {
 	var config Configs
 
-	if err := stepconf.Parse(&config); err != nil {
+	envRepository := env.NewRepository()
+	pathChecker := pathutil.NewPathChecker()
+	inputParser := stepconf.NewInputParser(envRepository)
+
+	if err := inputParser.Parse(&config); err != nil {
 		failf("Process config: couldn't create step config: %v\n", err)
 	}
 
@@ -195,7 +199,7 @@ func main() {
 	for module, variants := range variants {
 		logger.Printf("%s:", module)
 		for _, variant := range variants {
-			if sliceutil.IsStringInSlice(variant, filteredVariants[module]) {
+			if slices.Contains(filteredVariants[module], variant) {
 				logger.Donef("✓ %s", strings.TrimSuffix(variant, "UnitTest"))
 			} else {
 				logger.Printf("- %s", strings.TrimSuffix(variant, "UnitTest"))
@@ -228,7 +232,7 @@ func main() {
 		failf("Export outputs: failed to find reports, error: %v", err)
 	}
 
-	if err := exportArtifacts(config.DeployDir, reports); err != nil {
+	if err := exportArtifacts(pathChecker, config.DeployDir, reports); err != nil {
 		failf("Export outputs: failed to export reports, error: %v", err)
 	}
 
@@ -241,8 +245,22 @@ func main() {
 		failf("Export outputs: failed to find results, error: %v", err)
 	}
 
-	if err := exportArtifacts(config.DeployDir, results); err != nil {
+	if err := exportArtifacts(pathChecker, config.DeployDir, results); err != nil {
 		failf("Export outputs: failed to export results, error: %v", err)
+	}
+
+	xmlResultFilePattern := config.XMLResultDirPattern
+	if !strings.HasSuffix(xmlResultFilePattern, "*.xml") {
+		xmlResultFilePattern += "*.xml"
+	}
+
+	resultXMLs, err := getArtifacts(gradleProject, started, xmlResultFilePattern, false, false)
+	if err != nil {
+		logger.Warnf("Failed to find test XML test results, error: %s", err)
+	}
+
+	if err := detectFlakyTests(resultXMLs); err != nil {
+		logger.Warnf("Failed to detect flaky tests, error: %s", err)
 	}
 
 	if config.TestResultDir != "" {
@@ -256,10 +274,7 @@ func main() {
 			xmlResultFilePattern += "*.xml"
 		}
 
-		resultXMLs, err := getArtifacts(gradleProject, started, xmlResultFilePattern, false, false)
-		if err != nil {
-			logger.Warnf("Failed to find test XML test results, error: %s", err)
-		} else {
+		if len(resultXMLs) > 0 {
 			lastOtherDirIdx := -1
 			for _, artifact := range resultXMLs {
 				lastOtherDirIdx = tryExportTestAddonArtifact(artifact.Path, config.TestResultDir, lastOtherDirIdx)
@@ -270,11 +285,28 @@ func main() {
 	if testErr != nil {
 		os.Exit(1)
 	}
+}
 
-	fmt.Println()
-	logger.Infof("Collecting cache:")
-	if warning := cache.Collect(config.ProjectLocation, utilscache.Level(config.CacheLevel), cmdFactory); warning != nil {
-		logger.Warnf("%s", warning)
+func detectFlakyTests(artifacts []gradle.Artifact) error {
+	var reportFiles []string
+	for _, artifacts := range artifacts {
+		if strings.HasSuffix(artifacts.Name, ".xml") {
+			reportFiles = append(reportFiles, artifacts.Path)
+		}
 	}
-	logger.Donef("  Done")
+	if len(reportFiles) == 0 {
+		return nil
+	}
+
+	converter := junitxml.Converter{}
+	if !converter.Detect(reportFiles) {
+		return nil
+	}
+
+	report, err := converter.XML()
+	if err != nil {
+		return err
+	}
+	fmt.Println(report)
+	return nil
 }
