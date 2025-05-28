@@ -98,7 +98,7 @@ func (task *Task) GetCommand(v Variants, args ...string) command.Command {
 	cmdOpts := command.Opts{
 		Dir:    task.project.location,
 		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Stderr: os.Stdout,
 	}
 	return task.project.cmdFactory.Create(filepath.Join(task.project.location, "gradlew"), append(a, args...), &cmdOpts)
 }

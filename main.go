@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/bitrise-steplib/steps-deploy-to-bitrise-io/test/junit"
 
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
 	"github.com/bitrise-steplib/steps-deploy-to-bitrise-io/test/converters/junitxml"
@@ -259,8 +260,35 @@ func main() {
 		logger.Warnf("Failed to find test XML test results, error: %s", err)
 	}
 
-	if err := detectFlakyTests(resultXMLs); err != nil {
-		logger.Warnf("Failed to detect flaky tests, error: %s", err)
+	testRetried := false
+	var failingTestCases []junit.TestCase
+	var flakyTestCases []junit.TestCase
+	failedTestSuits, err := detectFailingTests(resultXMLs)
+	if err != nil {
+		logger.Warnf("Failed to detect failed tests: %s", err)
+	} else if len(failedTestSuits) > 0 {
+		logger.Printf("")
+		logger.Warnf("Detected %d failed test suit(s)", len(failedTestSuits))
+
+		for _, testSuit := range failedTestSuits {
+			logger.Warnf("Detected %d failed test cases in test suit: %s", len(testSuit.TestCases), testSuit.Name)
+
+			for _, testCase := range testSuit.TestCases {
+				logger.Infof("Retrying failing test:")
+
+				retryArgs := append(args, []string{"--tests", testCase.ClassName + "." + testCase.Name}...)
+				retryTestCommand := testTask.GetCommand(filteredVariants, retryArgs...)
+				// TODO: retry more than once
+				logger.Donef("$ %s", retryTestCommand.PrintableCommandArgs())
+				if err := retryTestCommand.Run(); err != nil {
+					logger.Errorf("Run: test task failed, error: %v", testErr)
+					failingTestCases = append(failingTestCases, testCase)
+				} else {
+					flakyTestCases = append(flakyTestCases, testCase)
+				}
+				testRetried = true
+			}
+		}
 	}
 
 	if config.TestResultDir != "" {
@@ -282,12 +310,41 @@ func main() {
 		}
 	}
 
-	if testErr != nil {
-		os.Exit(1)
+	if len(flakyTestCases) > 0 {
+		logger.Printf("")
+		logger.Warnf("Detected %d flaky tests:", len(flakyTestCases))
+		// TODO: limit the number of flaky tests to log
+		for _, testCase := range flakyTestCases {
+			logger.Warnf("- %s.%s", testCase.ClassName, testCase.Name)
+		}
+	}
+
+	if len(failingTestCases) > 0 {
+		logger.Printf("")
+		logger.Warnf("Detected %d failing tests:", len(failingTestCases))
+		for _, testCase := range failingTestCases {
+			logger.Warnf("- %s.%s", testCase.ClassName, testCase.Name)
+		}
+	}
+
+	if testRetried {
+		if len(failingTestCases) > 0 {
+			logger.Errorf("%d tests failed after retrying, please check the logs for details.", len(failingTestCases))
+			os.Exit(1)
+		} else {
+			logger.Donef("All tests passed after retrying flaky tests.")
+		}
+	} else {
+		if testErr != nil {
+			logger.Errorf("Test task failed, error: %v", testErr)
+			os.Exit(1)
+		} else {
+			logger.Donef("All tests passed.")
+		}
 	}
 }
 
-func detectFlakyTests(artifacts []gradle.Artifact) error {
+func detectFailingTests(artifacts []gradle.Artifact) ([]junit.TestSuite, error) {
 	var reportFiles []string
 	for _, artifacts := range artifacts {
 		if strings.HasSuffix(artifacts.Name, ".xml") {
@@ -295,18 +352,43 @@ func detectFlakyTests(artifacts []gradle.Artifact) error {
 		}
 	}
 	if len(reportFiles) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	converter := junitxml.Converter{}
 	if !converter.Detect(reportFiles) {
-		return nil
+		return nil, nil
 	}
 
-	report, err := converter.XML()
+	// TODO: Does Debug and Release variant produce identical XML files?
+	junitXML, err := converter.XML()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Println(report)
-	return nil
+
+	var failingTestSuits []junit.TestSuite
+	for _, testSuit := range junitXML.TestSuites {
+		var failingTestCases []junit.TestCase
+		for _, testCase := range testSuit.TestCases {
+			// TODO: align on criteria for a failing test
+			if testCase.Failure != nil {
+				failingTestCases = append(failingTestCases, testCase)
+			}
+		}
+		if len(failingTestCases) > 0 {
+			failingTestSuit := junit.TestSuite{
+				XMLName:   testSuit.XMLName,
+				Name:      testSuit.Name,
+				Tests:     testSuit.Tests,
+				Failures:  testSuit.Failures,
+				Skipped:   testSuit.Skipped,
+				Errors:    testSuit.Errors,
+				Time:      testSuit.Time,
+				TestCases: failingTestCases,
+			}
+			failingTestSuits = append(failingTestSuits, failingTestSuit)
+		}
+	}
+
+	return failingTestSuits, nil
 }

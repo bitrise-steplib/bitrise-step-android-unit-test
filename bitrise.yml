@@ -9,6 +9,15 @@ app:
   - ORIG_BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR
 
 workflows:
+  sample:
+    steps:
+    - change-workdir:
+        inputs:
+        - path: "<SAMPLE_APP_SOURCE_DIR>"
+    - path::./:
+        inputs:
+        - is_debug: "true"
+
   test:
     title: Test simple android project & mono repo projects
     before_run:
