@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,6 +22,9 @@ import (
 
 	"github.com/kballard/go-shellquote"
 )
+
+//go:embed configs/test-retry.gradle.kts
+var testRetryGradleInitScript string
 
 // Configs ...
 type Configs struct {
@@ -207,6 +211,24 @@ func main() {
 		}
 	}
 	fmt.Println()
+
+	//
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("android-unit-test")
+	if err != nil {
+		failf("Failed to create temporary directory, error: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	initScriptPth := filepath.Join(tmpDir, "test-retry.gradle.kts")
+	f, err := os.Create(initScriptPth)
+	if err != nil {
+		failf("Failed to create test retry gradle init script, error: %v", err)
+	}
+	if _, err := f.WriteString(testRetryGradleInitScript); err != nil {
+		failf("Failed to write test retry gradle init script, error: %v", err)
+	}
+	args = append(args, "--init-script", initScriptPth)
+	//
 
 	started := time.Now()
 
