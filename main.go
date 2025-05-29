@@ -271,10 +271,10 @@ func main() {
 		logger.Warnf("Detected %d failed test suit(s)", len(failedTestSuits))
 
 		for _, testSuit := range failedTestSuits {
-			logger.Warnf("Detected %d failed test cases in test suit: %s", len(testSuit.TestCases), testSuit.Name)
+			logger.Warnf("Detected %d failed test case(s) in test suit: %s", len(testSuit.TestCases), testSuit.Name)
 
 			for _, testCase := range testSuit.TestCases {
-				logger.Infof("Retrying failing test:")
+				logger.Infof("Retrying failing test (%s):", testCase.ClassName+"."+testCase.Name)
 
 				retryArgs := append(args, []string{"--tests", testCase.ClassName + "." + testCase.Name}...)
 				retryTestCommand := testTask.GetCommand(filteredVariants, retryArgs...)
