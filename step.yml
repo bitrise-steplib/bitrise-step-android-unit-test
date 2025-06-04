@@ -5,15 +5,15 @@ website: https://github.com/bitrise-steplib/bitrise-step-android-unit-test
 source_code_url: https://github.com/bitrise-steplib/bitrise-step-android-unit-test
 support_url: https://github.com/bitrise-steplib/bitrise-step-android-unit-test/issues
 host_os_tags:
-  - osx-10.10
-  - ubuntu-16.04
+- osx-10.10
+- ubuntu-16.04
 
 project_type_tags:
-  - android
-  - react-native
+- android
+- react-native
 
 type_tags:
-  - test
+- test
 
 is_requires_admin_user: true
 is_always_run: false
@@ -24,95 +24,95 @@ toolkit:
     package_name: github.com/bitrise-steplib/bitrise-step-android-unit-test
 
 inputs:
-  - project_location: $BITRISE_SOURCE_DIR
-    opts:
-      title: Project Location
-      summary: "The root directory of your android project, for example, where your root build gradle file exists (also gradlew, settings.gradle, etc...)"
-      description: "The root directory of your android project, for example, where your root build gradle file exists (also gradlew, settings.gradle, etc...)"
-      is_required: true
-  - module: ""
-    opts:
-      title: Module
-      summary: |
-        Set the module that you want to test.
-      description: |
-        Set the module that you want to test.  
-        To see your available modules, please open your project in Android Studio, go to **Project Structure** and see the list on the left.  
-        Leave this input blank to test all modules.
-      is_required: false
-  - variant: ""
-    opts:
-      title: Variant
-      summary: |
-        Set the variant that you want to test.
-      description: |
-        Set the variant that you want to test.  
-        To see your available variants, please open your project in Android Studio, go to **Project Structure**, then to the **variants** section.  
-        Leave this input blank to test all variants.
-      is_required: false
-  - arguments:
-    opts:
-      category: Options
-      title: Additional Gradle Arguments 
-      summary: Extra arguments passed to the gradle task
-      description: Extra arguments passed to the gradle task
-      is_required: false
-  - report_path_pattern: "*build/reports/tests"
-    opts:
-      category: Options
-      title: Local unit test HTML result directory pattern
-      description: |-
-        The step will use this pattern to export __Local unit test HTML results__.  
-        The whole HTML results directory will be zipped and moved to the `$BITRISE_DEPLOY_DIR`.
+- project_location: $BITRISE_SOURCE_DIR
+  opts:
+    title: Project Location
+    summary: The root directory of your android project, for example, where your root build gradle file exists (also gradlew, settings.gradle, etc...)
+    description: The root directory of your android project, for example, where your root build gradle file exists (also gradlew, settings.gradle, etc...)
+    is_required: true
+- module: ""
+  opts:
+    title: Module
+    summary: |
+      Set the module that you want to test.
+    description: |
+      Set the module that you want to test.
+      To see your available modules, please open your project in Android Studio, go to **Project Structure** and see the list on the left.
+      Leave this input blank to test all modules.
+    is_required: false
+- variant: ""
+  opts:
+    title: Variant
+    summary: |
+      Set the variant that you want to test.
+    description: |
+      Set the variant that you want to test.
+      To see your available variants, please open your project in Android Studio, go to **Project Structure**, then to the **variants** section.
+      Leave this input blank to test all variants.
+    is_required: false
+- arguments:
+  opts:
+    category: Options
+    title: Additional Gradle Arguments
+    summary: Extra arguments passed to the gradle task
+    description: Extra arguments passed to the gradle task
+    is_required: false
+- report_path_pattern: "*build/reports/tests"
+  opts:
+    category: Options
+    title: Local unit test HTML result directory pattern
+    description: |-
+      The step will use this pattern to export __Local unit test HTML results__.
+      The whole HTML results directory will be zipped and moved to the `$BITRISE_DEPLOY_DIR`.
 
-        You need to override this input if you have custom output dir set for Local unit test HTML results.  
-        The pattern needs to be relative to the selected module's directory.
+      You need to override this input if you have custom output dir set for Local unit test HTML results.
+      The pattern needs to be relative to the selected module's directory.
 
-        Example 1: app module and debug variant is selected and the HTML report is generated at:
+      Example 1: app module and debug variant is selected and the HTML report is generated at:
 
-        - `<path_to_your_project>/app/build/reports/tests/testDebugUnitTest`
+      - `<path_to_your_project>/app/build/reports/tests/testDebugUnitTest`
 
-        this case use: `*build/reports/tests/testDebugUnitTest` pattern.
+      this case use: `*build/reports/tests/testDebugUnitTest` pattern.
 
-        Example 2: app module and NO variant is selected and the HTML reports are generated at:
+      Example 2: app module and NO variant is selected and the HTML reports are generated at:
 
-        - `<path_to_your_project>/app/build/reports/tests/testDebugUnitTest`
-        - `<path_to_your_project>/app/build/reports/tests/testReleaseUnitTest`
+      - `<path_to_your_project>/app/build/reports/tests/testDebugUnitTest`
+      - `<path_to_your_project>/app/build/reports/tests/testReleaseUnitTest`
 
-        to export every variant's reports use: `*build/reports/tests` pattern.
-      is_required: true
-  - result_path_pattern: "*build/test-results"
-    opts:
-      category: Options
-      title: Local unit test XML result directory pattern
-      description: |-
-        The step will use this pattern to export __Local unit test XML results__.  
-        The whole XML results directory will be zipped and moved to the `$BITRISE_DEPLOY_DIR`  
-        and the result files will be deployed to the Ship Addon.
+      to export every variant's reports use: `*build/reports/tests` pattern.
+    is_required: true
+- result_path_pattern: "*build/test-results"
+  opts:
+    category: Options
+    title: Local unit test XML result directory pattern
+    description: |-
+      The step will use this pattern to export __Local unit test XML results__.
+      The whole XML results directory will be zipped and moved to the `$BITRISE_DEPLOY_DIR`
+      and the result files will be deployed to the Ship Addon.
 
-        You need to override this input if you have custom output dir set for Local unit test XML results.  
-        The pattern needs to be relative to the selected module's directory.
+      You need to override this input if you have custom output dir set for Local unit test XML results.
+      The pattern needs to be relative to the selected module's directory.
 
-        Example 1: app module and debug variant is selected and the XML report is generated at:
+      Example 1: app module and debug variant is selected and the XML report is generated at:
 
-        - `<path_to_your_project>/app/build/test-results/testDebugUnitTest`
+      - `<path_to_your_project>/app/build/test-results/testDebugUnitTest`
 
-        this case use: `*build/test-results/testDebugUnitTest` pattern.
+      this case use: `*build/test-results/testDebugUnitTest` pattern.
 
-        Example 2: app module and NO variant is selected and the XML reports are generated at:
+      Example 2: app module and NO variant is selected and the XML reports are generated at:
 
-        - `<path_to_your_project>/app/build/test-results/testDebugUnitTest`
-        - `<path_to_your_project>/app/build/test-results/testReleaseUnitTest`
+      - `<path_to_your_project>/app/build/test-results/testDebugUnitTest`
+      - `<path_to_your_project>/app/build/test-results/testReleaseUnitTest`
 
-        to export every variant's reports use: `*build/test-results` pattern.
-      is_required: true
-  - is_debug: "false"
-    opts: 
-      category: Debug
-      title: "Enable Debug Mode"
-      summary: The step will print more verbose logs if enabled.
-      description: The step will print more verbose logs if enabled.
-      is_required: true
-      value_options:
-      - "false"
-      - "true"
+      to export every variant's reports use: `*build/test-results` pattern.
+    is_required: true
+- is_debug: "false"
+  opts:
+    category: Debug
+    title: Enable Debug Mode
+    summary: The step will print more verbose logs if enabled.
+    description: The step will print more verbose logs if enabled.
+    is_required: true
+    value_options:
+    - "false"
+    - "true"
