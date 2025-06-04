@@ -261,9 +261,7 @@ func main() {
 		resultXMLs, err := getArtifacts(gradleProject, started, xmlResultFilePattern, false, false)
 		if err != nil {
 			logger.Warnf("Failed to find test XML test results, error: %s", err)
-		}
-
-		if len(resultXMLs) > 0 {
+		} else {
 			lastOtherDirIdx := -1
 			for _, artifact := range resultXMLs {
 				lastOtherDirIdx = tryExportTestAddonArtifact(artifact.Path, config.TestResultDir, lastOtherDirIdx)
