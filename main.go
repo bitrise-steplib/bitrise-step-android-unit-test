@@ -17,8 +17,6 @@ import (
 	"github.com/bitrise-io/go-utils/v2/pathutil"
 
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
-	"github.com/bitrise-steplib/steps-deploy-to-bitrise-io/test/converters/junitxml"
-
 	"github.com/kballard/go-shellquote"
 )
 
@@ -249,20 +247,6 @@ func main() {
 		failf("Export outputs: failed to export results, error: %v", err)
 	}
 
-	xmlResultFilePattern := config.XMLResultDirPattern
-	if !strings.HasSuffix(xmlResultFilePattern, "*.xml") {
-		xmlResultFilePattern += "*.xml"
-	}
-
-	resultXMLs, err := getArtifacts(gradleProject, started, xmlResultFilePattern, false, false)
-	if err != nil {
-		logger.Warnf("Failed to find test XML test results, error: %s", err)
-	}
-
-	if err := detectFlakyTests(resultXMLs); err != nil {
-		logger.Warnf("Failed to detect flaky tests, error: %s", err)
-	}
-
 	if config.TestResultDir != "" {
 		// Test Addon is turned on
 		fmt.Println()
@@ -272,6 +256,11 @@ func main() {
 		xmlResultFilePattern := config.XMLResultDirPattern
 		if !strings.HasSuffix(xmlResultFilePattern, "*.xml") {
 			xmlResultFilePattern += "*.xml"
+		}
+
+		resultXMLs, err := getArtifacts(gradleProject, started, xmlResultFilePattern, false, false)
+		if err != nil {
+			logger.Warnf("Failed to find test XML test results, error: %s", err)
 		}
 
 		if len(resultXMLs) > 0 {
@@ -285,28 +274,4 @@ func main() {
 	if testErr != nil {
 		os.Exit(1)
 	}
-}
-
-func detectFlakyTests(artifacts []gradle.Artifact) error {
-	var reportFiles []string
-	for _, artifacts := range artifacts {
-		if strings.HasSuffix(artifacts.Name, ".xml") {
-			reportFiles = append(reportFiles, artifacts.Path)
-		}
-	}
-	if len(reportFiles) == 0 {
-		return nil
-	}
-
-	converter := junitxml.Converter{}
-	if !converter.Detect(reportFiles) {
-		return nil
-	}
-
-	report, err := converter.XML()
-	if err != nil {
-		return err
-	}
-	fmt.Println(report)
-	return nil
 }
