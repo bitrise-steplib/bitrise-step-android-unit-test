@@ -22,21 +22,10 @@ workflows:
   test-in-src-dir:
     title: Test android project & mono repo projects in source dir
     steps:
-    - change-workdir:
-        title: cd $ORIG_BITRISE_SOURCE_DIR
+    - bundle::setup-test-app:
         inputs:
-        - path: $ORIG_BITRISE_SOURCE_DIR
-    - script:
-        inputs:
-        - content: rm -rf $ORIG_BITRISE_SOURCE_DIR/_tmp
-    - change-workdir:
-        title: cd  $ORIG_BITRISE_SOURCE_DIR/_tmp
-        inputs:
-        - path: ./_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
+        - sample_app_url: $SAMPLE_REPO_GIT_CLONE_URL
+        - sample_app_branch: $SAMPLE_REPO_BRANCH
     - set-java-version:
         inputs:
         - set_java_version: "11"
@@ -53,21 +42,10 @@ workflows:
   test-in-src-dir-module-variant:
     title: Test mono repo projects in source dir, module and variant set
     steps:
-    - change-workdir:
-        title: cd $ORIG_BITRISE_SOURCE_DIR
+    - bundle::setup-test-app:
         inputs:
-        - path: $ORIG_BITRISE_SOURCE_DIR
-    - script:
-        inputs:
-        - content: rm -rf $ORIG_BITRISE_SOURCE_DIR/_tmp
-    - change-workdir:
-        title: cd  $ORIG_BITRISE_SOURCE_DIR/_tmp
-        inputs:
-        - path: ./_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
+        - sample_app_url: $SAMPLE_REPO_GIT_CLONE_URL
+        - sample_app_branch: $SAMPLE_REPO_BRANCH
     - set-java-version:
         inputs:
         - set_java_version: "11"
@@ -85,18 +63,11 @@ workflows:
   test-in-root-tmp-dir:
     title: Test android project & mono repo projects in /tmp dir
     steps:
-    - script:
+    - bundle::setup-test-app:
         inputs:
-        - content: rm -rf /tmp/_tmp
-    - change-workdir:
-        title: cd /tmp/_tmp
-        run_if: true
-        inputs:
-        - path: /tmp/_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
+        - sample_app_url: $SAMPLE_REPO_GIT_CLONE_URL
+        - sample_app_branch: $SAMPLE_REPO_BRANCH
+        - work_dir: /tmp/_tmp
     - set-java-version:
         inputs:
         - set_java_version: "11"
@@ -112,21 +83,9 @@ workflows:
   test-gradle-kts:
     title: Test android project with build.gradle.kts
     steps:
-    - change-workdir:
-        title: cd $ORIG_BITRISE_SOURCE_DIR
+    - bundle::setup-test-app:
         inputs:
-        - path: $ORIG_BITRISE_SOURCE_DIR
-    - script:
-        inputs:
-        - content: rm -rf $ORIG_BITRISE_SOURCE_DIR/_tmp
-    - change-workdir:
-        title: cd  $ORIG_BITRISE_SOURCE_DIR/_tmp
-        inputs:
-        - path: ./_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone $SAMPLE_REPO_KOTLIN_GRADLE_URL .
+        - sample_app_url: $SAMPLE_REPO_KOTLIN_GRADLE_URL
     - install-missing-android-tools:
         inputs:
         - gradlew_path: ./gradlew
@@ -138,21 +97,10 @@ workflows:
 
   check-testaddon-export:
     steps:
-    - change-workdir:
-        title: cd $ORIG_BITRISE_SOURCE_DIR
+    - bundle::setup-test-app:
         inputs:
-        - path: $ORIG_BITRISE_SOURCE_DIR
-    - script:
-        inputs:
-        - content: rm -rf $ORIG_BITRISE_SOURCE_DIR/_tmp
-    - change-workdir:
-        title: cd  $ORIG_BITRISE_SOURCE_DIR/_tmp
-        inputs:
-        - path: ./_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL -b code-coverage .
+        - sample_app_url: $SAMPLE_REPO_GIT_CLONE_URL
+        - sample_app_branch: code-coverage
     - set-java-version:
         inputs:
         - set_java_version: "11"
@@ -198,6 +146,26 @@ workflows:
     - git::https://github.com/bitrise-steplib/steps-readme-generator.git@main: { }
 
 step_bundles:
+  setup-test-app:
+    inputs:
+    - sample_app_url:
+    - sample_app_branch:
+    - work_dir: $ORIG_BITRISE_SOURCE_DIR/_tmp
+    steps:
+    - script:
+        inputs:
+        - content: rm -rf $work_dir
+    - change-workdir:
+        title: cd  $work_dir
+        inputs:
+        - path: $work_dir
+        - is_create_path: true
+    - git::https://github.com/bitrise-steplib/bitrise-step-simple-git-clone.git:
+        inputs:
+        - clone_into_dir: ./
+        - repository_url: $sample_app_url
+        - branch: $sample_app_branch
+
   check-artifacts:
     steps:
     - script:
