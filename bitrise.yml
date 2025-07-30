@@ -7,124 +7,20 @@ app:
 
 workflows:
   test:
+    after_run:
+#    - check
+    - e2e
+
+  check:
     steps:
     - git::https://github.com/bitrise-steplib/steps-check.git: { }
-    after_run:
-    - test-in-src-dir
-    - test-in-src-dir-module-variant
-    - test-gradle-kts
 
-  test-in-src-dir:
-    title: Test android project in source dir
+  e2e:
     steps:
-    - bundle::setup-test-app:
+    - git::https://github.com/bitrise-steplib/steps-check.git:
         inputs:
-        - sample_app_url: https://github.com/bitrise-io/sample-apps-android-sdk22.git
-        - sample_app_branch: master
-    - path::./:
-        inputs:
-        - is_debug: "true"
-        - arguments: --warn
-    - bundle::check-artifacts:
-        inputs:
-        - variant: Debug
-    - bundle::check-artifacts:
-        inputs:
-        - variant: Release
-
-  test-in-src-dir-module-variant:
-    title: Test android project in source dir, set module and variant
-    steps:
-    - bundle::setup-test-app:
-        inputs:
-        - sample_app_url: https://github.com/bitrise-io/sample-apps-android-sdk22.git
-        - sample_app_branch: master
-    - path::./:
-        inputs:
-        - module: app
-        - variant: Debug
-        - is_debug: "true"
-    - bundle::check-artifacts:
-        inputs:
-        - module: app
-        - variant: Debug
-
-  test-gradle-kts:
-    title: Test android project with build.gradle.kts
-    steps:
-    - bundle::setup-test-app:
-        inputs:
-        - sample_app_url: https://github.com/bitrise-samples/android-gradle-kotlin-dsl
-        - sample_app_branch: master
-    - path::./:
-        inputs:
-        - module: app
-        - variant: Release
-        - is_debug: "true"
-    - bundle::check-artifacts:
-        inputs:
-        - module: app
-        - variant: Release
+        - workflow: e2e
 
   generate_readme:
     steps:
     - git::https://github.com/bitrise-steplib/steps-readme-generator.git@main: { }
-
-step_bundles:
-  setup-test-app:
-    inputs:
-    - sample_app_url:
-    - sample_app_branch:
-    - work_dir: $ORIG_BITRISE_SOURCE_DIR/_tmp
-    steps:
-    - script:
-        inputs:
-        - content: rm -rf $work_dir; mkdir -p $work_dir
-    - script:
-        is_skippable: true
-        inputs:
-        - content: rm -rf $BITRISE_TEST_DEPLOY_DIR/*
-    - change-workdir:
-        title: cd  $work_dir
-        inputs:
-        - path: $work_dir
-        - is_create_path: true
-    - git::https://github.com/bitrise-steplib/bitrise-step-simple-git-clone.git:
-        inputs:
-        - clone_into_dir: ./
-        - repository_url: $sample_app_url
-        - branch: $sample_app_branch
-
-  check-artifacts:
-    inputs:
-    - module: app
-    - variant: Debug
-    steps:
-    - script:
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-
-            # HTML results
-            if [ ! -f $BITRISE_DEPLOY_DIR/${module}-tests.zip ]; then
-                exit 1
-            fi
-            
-            # XML results
-            if [ ! -f $BITRISE_DEPLOY_DIR/${module}-test-results.zip ]; then
-                exit 1
-            fi
-            
-            ## Test Reporting
-            # check directory and test-info.json existence
-            if ! find "${BITRISE_TEST_DEPLOY_DIR}" -regex ".*/${module}-${variant}/test-info.json" >/dev/null 2>&1; then
-              echo "test-info.json does not exist in ${BITRISE_TEST_DEPLOY_DIR}/.../${module}-${variant}/"
-              exit 1
-            fi
-
-            # check result xml existence
-            if ! find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/${module}-${variant}/TEST.*.xml" >/dev/null 2>&1; then
-              echo "test_report XML file does not exist in ${BITRISE_TEST_DEPLOY_DIR}/.../${module}-${variant}/"
-              exit 1
-            fi
