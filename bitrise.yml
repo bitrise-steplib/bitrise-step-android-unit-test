@@ -37,6 +37,9 @@ workflows:
     - script:
         inputs:
         - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
+    - set-java-version:
+        inputs:
+        - set_java_version: "11"
     - install-missing-android-tools:
         inputs:
         - gradlew_path: ./gradlew
@@ -95,8 +98,8 @@ workflows:
         inputs:
         - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
     - set-java-version:
-          inputs:
-          - set_java_version: "11"
+        inputs:
+        - set_java_version: "11"
     - install-missing-android-tools:
         inputs:
         - gradlew_path: ./gradlew
@@ -151,8 +154,8 @@ workflows:
         inputs:
         - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL -b code-coverage .
     - set-java-version:
-          inputs:
-          - set_java_version: "11"
+        inputs:
+        - set_java_version: "11"
     - install-missing-android-tools:
         inputs:
         - gradlew_path: ./gradlew
