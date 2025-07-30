@@ -8,7 +8,7 @@ app:
 workflows:
   test:
     after_run:
-#    - check
+    - check
     - e2e
 
   check:
