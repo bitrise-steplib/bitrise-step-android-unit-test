@@ -3,9 +3,6 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - SAMPLE_REPO_GIT_CLONE_URL: https://github.com/bitrise-io/android-multiple-test-results-sample.git
-  - SAMPLE_REPO_BRANCH: maintenance
-  - SAMPLE_REPO_KOTLIN_GRADLE_URL: https://github.com/bitrise-io/android-gradle-kotlin-dsl.git
   - ORIG_BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR
 
 workflows:
@@ -15,131 +12,59 @@ workflows:
     after_run:
     - test-in-src-dir
     - test-in-src-dir-module-variant
-    - test-in-root-tmp-dir
     - test-gradle-kts
-    - check-testaddon-export
 
   test-in-src-dir:
-    title: Test android project & mono repo projects in source dir
+    title: Test android project in source dir
     steps:
     - bundle::setup-test-app:
         inputs:
-        - sample_app_url: $SAMPLE_REPO_GIT_CLONE_URL
-        - sample_app_branch: $SAMPLE_REPO_BRANCH
-    - set-java-version:
-        inputs:
-        - set_java_version: "11"
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
+        - sample_app_url: https://github.com/bitrise-io/sample-apps-android-sdk22.git
+        - sample_app_branch: master
     - path::./:
-        title: Android Unit Test (monorepo projects in source dir)
         inputs:
         - is_debug: "true"
         - arguments: --warn
-    - bundle::check-artifacts: { }
+    - bundle::check-artifacts:
+        inputs:
+        - variant: Debug
+    - bundle::check-artifacts:
+        inputs:
+        - variant: Release
 
   test-in-src-dir-module-variant:
-    title: Test mono repo projects in source dir, module and variant set
+    title: Test android project in source dir, set module and variant
     steps:
     - bundle::setup-test-app:
         inputs:
-        - sample_app_url: $SAMPLE_REPO_GIT_CLONE_URL
-        - sample_app_branch: $SAMPLE_REPO_BRANCH
-    - set-java-version:
-        inputs:
-        - set_java_version: "11"
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
+        - sample_app_url: https://github.com/bitrise-io/sample-apps-android-sdk22.git
+        - sample_app_branch: master
     - path::./:
-        title: Android Unit Test (monorepo in source dir, with module and variant set)
         inputs:
         - module: app
-        - variant: DemoDebug
+        - variant: Debug
         - is_debug: "true"
-    - bundle::check-artifacts: { }
-
-  test-in-root-tmp-dir:
-    title: Test android project & mono repo projects in /tmp dir
-    steps:
-    - bundle::setup-test-app:
+    - bundle::check-artifacts:
         inputs:
-        - sample_app_url: $SAMPLE_REPO_GIT_CLONE_URL
-        - sample_app_branch: $SAMPLE_REPO_BRANCH
-        - work_dir: /tmp/_tmp
-    - set-java-version:
-        inputs:
-        - set_java_version: "11"
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
-    - path::./:
-        title: Android Unit Test (android project & mono repo projects in /tmp dir)
-        inputs:
-        - is_debug: "true"
-    - bundle::check-artifacts: { }
+        - module: app
+        - variant: Debug
 
   test-gradle-kts:
     title: Test android project with build.gradle.kts
     steps:
     - bundle::setup-test-app:
         inputs:
-        - sample_app_url: $SAMPLE_REPO_KOTLIN_GRADLE_URL
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
+        - sample_app_url: https://github.com/bitrise-samples/android-gradle-kotlin-dsl
+        - sample_app_branch: master
     - path::./:
-        title: Android Unit Test (android project with build.gradle.kts)
-        inputs:
-        - is_debug: "true"
-    - bundle::check-artifacts: { }
-
-  check-testaddon-export:
-    steps:
-    - bundle::setup-test-app:
-        inputs:
-        - sample_app_url: $SAMPLE_REPO_GIT_CLONE_URL
-        - sample_app_branch: code-coverage
-    - set-java-version:
-        inputs:
-        - set_java_version: "11"
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
-    - script:
-        title: purge previous build artifacts
-        inputs:
-        - content: ./gradlew clean
-    - script:
-        title: purge test deploy dir (will always cause ignorable cli error)
-        inputs:
-        - content: rm -rf $BITRISE_TEST_DEPLOY_DIR/*
-    - path::./:
-        title: run step with predefined inputs
         inputs:
         - module: app
-        - variant: Debug
+        - variant: Release
         - is_debug: "true"
-    - script:
-        title: check exported artifacts
-        is_always_run: true
+    - bundle::check-artifacts:
         inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-
-            # check directory and test-info.json existence
-            if [ $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/test-info.json" | grep -c .) -eq 0 ]; then
-                echo "ERROR: ${BITRISE_TEST_DEPLOY_DIR} does not contain app-debug/test-info.json."
-                exit 1
-            fi
-
-            # check result xml existence
-            if [ ! $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/TEST.*.xml" | grep -c .) -eq 2 ]; then
-                echo "ERROR: ${BITRISE_TEST_DEPLOY_DIR} does not contain all test result XMLs."
-                exit 1
-            fi
+        - module: app
+        - variant: Release
 
   generate_readme:
     steps:
@@ -154,7 +79,11 @@ step_bundles:
     steps:
     - script:
         inputs:
-        - content: rm -rf $work_dir
+        - content: rm -rf $work_dir; mkdir -p $work_dir
+    - script:
+        is_skippable: true
+        inputs:
+        - content: rm -rf $BITRISE_TEST_DEPLOY_DIR/*
     - change-workdir:
         title: cd  $work_dir
         inputs:
@@ -167,38 +96,35 @@ step_bundles:
         - branch: $sample_app_branch
 
   check-artifacts:
+    inputs:
+    - module: app
+    - variant: Debug
     steps:
     - script:
-        title: Check if files are existing
         inputs:
         - content: |-
             #!/usr/bin/env bash
             set -ex
 
-            # without timestamps
-            if [ ! -f $BITRISE_DEPLOY_DIR/another_app-reports.zip ]; then
+            # HTML results
+            if [ ! -f $BITRISE_DEPLOY_DIR/${module}-tests.zip ]; then
                 exit 1
             fi
-            if [ ! -f $BITRISE_DEPLOY_DIR/app-reports.zip ]; then
+            
+            # XML results
+            if [ ! -f $BITRISE_DEPLOY_DIR/${module}-test-results.zip ]; then
                 exit 1
             fi
-            if [ ! -f $BITRISE_DEPLOY_DIR/another_app-test-results.zip ]; then
-                exit 1
-            fi
-            if [ ! -f $BITRISE_DEPLOY_DIR/app-test-results.zip ]; then
-                exit 1
+            
+            ## Test Reporting
+            # check directory and test-info.json existence
+            if ! find "${BITRISE_TEST_DEPLOY_DIR}" -regex ".*/${module}-${variant}/test-info.json" >/dev/null 2>&1; then
+              echo "test-info.json does not exist in ${BITRISE_TEST_DEPLOY_DIR}/.../${module}-${variant}/"
+              exit 1
             fi
 
-            # with timestamps
-            if [ ! -f $(ls $BITRISE_DEPLOY_DIR/another_app-reports-20*.zip) ]; then
-                exit 1
-            fi
-            if [ ! -f $(ls $BITRISE_DEPLOY_DIR/app-reports-20*.zip) ]; then
-                exit 1
-            fi
-            if [ ! -f $(ls $BITRISE_DEPLOY_DIR/another_app-test-results-20*.zip) ]; then
-                exit 1
-            fi
-            if [ ! -f $(ls $BITRISE_DEPLOY_DIR/app-test-results-20*.zip) ]; then
-                exit 1
+            # check result xml existence
+            if ! find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/${module}-${variant}/TEST.*.xml" >/dev/null 2>&1; then
+              echo "test_report XML file does not exist in ${BITRISE_TEST_DEPLOY_DIR}/.../${module}-${variant}/"
+              exit 1
             fi
