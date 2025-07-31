@@ -135,8 +135,8 @@ func (e exporter) getFlakyTestSuites(testReport testreport.TestReport) []testrep
 
 	for _, suite := range testReport.TestSuites {
 		var flakyTests []testreport.TestCase
-		var testCasesToStatus map[string]bool
-		var alreadySeenFlakyTests map[string]bool
+		testCasesToStatus := map[string]bool{}
+		alreadySeenFlakyTests := map[string]bool{}
 
 		for _, testCase := range suite.TestCases {
 			testCaseID := testCase.ClassName + "." + testCase.Name
@@ -194,6 +194,10 @@ func (e exporter) exportFlakyTestCasesEnvVar(flakyTestSuites []testreport.TestSu
 				flakyTestCases = append(flakyTestCases, testCaseName)
 			}
 		}
+	}
+
+	if len(flakyTestCases) > 0 {
+		e.logger.Printf("Found %d flaky test cases, exporting %s env var", len(flakyTestCases), flakyTestCasesEnvVarKey)
 	}
 
 	var flakyTestCasesMessage string

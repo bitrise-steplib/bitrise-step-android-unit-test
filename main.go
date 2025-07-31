@@ -147,7 +147,11 @@ func main() {
 		if err != nil {
 			logger.Warnf("Failed to find test XML test results, error: %s", err)
 		} else {
-			exporter.ExportTestAddonArtifacts(config.TestResultDir, resultXMLs)
+			if err := exporter.ExportTestAddonArtifacts(config.TestResultDir, resultXMLs); err != nil {
+				logger.Warnf("Failed to export test XML test results, error: %s", err)
+			} else {
+				logger.Donef("Exported %d XML test result files for test addon", len(resultXMLs))
+			}
 		}
 	}
 

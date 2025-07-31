@@ -35,7 +35,7 @@ func ExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int,
 		if rel, err := workDirRel(artifactPth); err == nil {
 			src = "./" + rel
 		}
-		logger.Printf("  Export [%s => %s]", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifactPth)))
+		logger.Printf("Exporting %s => %s", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifactPth)))
 	}
 	return lastOtherDirIdx, nil
 }
