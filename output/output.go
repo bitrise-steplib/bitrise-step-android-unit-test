@@ -17,7 +17,9 @@ import (
 )
 
 const (
-	flakyTestCasesEnvVarKey              = "BITRISE_FLAKY_TEST_CASES"
+	// TODO: add the new Step Output
+	flakyTestCasesEnvVarKey = "BITRISE_FLAKY_TEST_CASES"
+	// TODO: limit the size of the env var
 	flakyTestCasesEnvVarSizeLimitInBytes = 1024
 )
 
@@ -28,11 +30,10 @@ type Exporter interface {
 }
 
 type exporter struct {
-	envRepository   env.Repository
-	pathChecker     pathutil.PathChecker
-	logger          log.Logger
-	converter       junitxml.Converter
-	lastOtherDirIdx int
+	envRepository env.Repository
+	pathChecker   pathutil.PathChecker
+	logger        log.Logger
+	converter     junitxml.Converter
 }
 
 func NewExporter(envRepository env.Repository, pathChecker pathutil.PathChecker, logger log.Logger) Exporter {
