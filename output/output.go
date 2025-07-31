@@ -1,94 +1,80 @@
 package output
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
+	"github.com/bitrise-io/go-android/v2/gradle"
 	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
 )
 
 type Exporter interface {
+	ExportArtifacts(deployDir string, artifacts []gradle.Artifact) error
+	ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact)
 }
 
-const (
-	// ResultDescriptorFileName is the name of the test result descriptor file.
-	ResultDescriptorFileName = "test-info.json"
-)
+type exporter struct {
+	pathChecker     pathutil.PathChecker
+	logger          log.Logger
+	lastOtherDirIdx int
+}
 
-func ExportTestResultXML(path, baseDir, uniqueDir string, logger log.Logger) error {
-	exportDir := filepath.Join(baseDir, uniqueDir)
-
-	if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
-		return fmt.Errorf("skipping artifact (%s): could not ensure unique export dir (%s): %s", path, exportDir, err)
+func NewExporter(pathChecker pathutil.PathChecker, logger log.Logger) Exporter {
+	return &exporter{
+		pathChecker: pathChecker,
+		logger:      logger,
 	}
+}
 
-	if _, err := os.Stat(filepath.Join(exportDir, ResultDescriptorFileName)); os.IsNotExist(err) {
-		m := map[string]string{"test-name": uniqueDir}
-		data, err := json.Marshal(m)
+func (e exporter) ExportArtifacts(deployDir string, artifacts []gradle.Artifact) error {
+	for _, artifact := range artifacts {
+		artifact.Name += ".zip"
+		exists, err := e.pathChecker.IsPathExists(filepath.Join(deployDir, artifact.Name))
 		if err != nil {
-			return fmt.Errorf("create test info descriptor: json marshal data (%s): %s", m, err)
+			return fmt.Errorf("failed to check path, error: %v", err)
 		}
-		if err := generateTestInfoFile(exportDir, data); err != nil {
-			return fmt.Errorf("create test info descriptor: generate file: %s", err)
-		}
-	}
 
-	name := filepath.Base(path)
-	if err := copyFile(path, filepath.Join(exportDir, name), logger); err != nil {
-		return fmt.Errorf("failed to export artifact (%s), error: %v", name, err)
+		if exists {
+			timestamp := time.Now().Format("20060102150405")
+			artifact.Name = fmt.Sprintf("%s-%s%s", strings.TrimSuffix(artifact.Name, ".zip"), timestamp, ".zip")
+		}
+
+		src := filepath.Base(artifact.Path)
+		if rel, err := workDirRel(artifact.Path); err == nil {
+			src = "./" + rel
+		}
+
+		e.logger.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", src, artifact.Name)
+
+		if err := artifact.ExportZIP(deployDir); err != nil {
+			e.logger.Warnf("failed to export artifact (%s), error: %v", artifact.Path, err)
+			continue
+		}
 	}
 	return nil
 }
 
-func generateTestInfoFile(dir string, data []byte) error {
-	f, err := os.Create(filepath.Join(dir, ResultDescriptorFileName))
-	if err != nil {
-		return err
+func (e exporter) ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact) {
+	lastOtherDirIdx := -1
+	for _, artifact := range artifacts {
+		var err error
+		lastOtherDirIdx, err = testaddon.ExportTestAddonArtifact(artifact.Path, testDeployDir, lastOtherDirIdx, e.logger)
+		if err != nil {
+			e.logger.Warnf("Failed to export test results for test addon: %s", err)
+		}
 	}
-
-	if _, err := f.Write(data); err != nil {
-		return err
-	}
-
-	if err := f.Sync(); err != nil {
-		return err
-	}
-
-	if err := f.Close(); err != nil {
-		return err
-	}
-
-	return nil
+	return
 }
 
-func copyFile(src, dst string, logger log.Logger) error {
-	srcFile, err := os.Open(src)
+func workDirRel(pth string) (string, error) {
+	wd, err := os.Getwd()
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer func() {
-		if err := srcFile.Close(); err != nil {
-			logger.Warnf("Failed to close source file (%s): %v", src, err)
-		}
-	}()
-
-	dstFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := dstFile.Close(); err != nil {
-			logger.Warnf("Failed to close destination file (%s): %v", dst, err)
-		}
-	}()
-
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return filepath.Rel(wd, pth)
 }

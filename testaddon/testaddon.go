@@ -16,7 +16,7 @@ const (
 	ResultDescriptorFileName = "test-info.json"
 )
 
-func ExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int, logger log.Logger) int {
+func ExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int, logger log.Logger) (int, error) {
 	dir := getExportDir(artifactPth)
 
 	if dir == OtherDirName {
@@ -29,7 +29,7 @@ func ExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int,
 	}
 
 	if err := exportArtifact(artifactPth, outputDir, dir, logger); err != nil {
-		logger.Warnf("Failed to export test results for test addon: %s", err)
+		return lastOtherDirIdx, err
 	} else {
 		src := artifactPth
 		if rel, err := workDirRel(artifactPth); err == nil {
@@ -37,7 +37,7 @@ func ExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int,
 		}
 		logger.Printf("  Export [%s => %s]", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifactPth)))
 	}
-	return lastOtherDirIdx
+	return lastOtherDirIdx, nil
 }
 
 // exportArtifact exports artifact found at path in directory uniqueDir, rooted at baseDir.
