@@ -5,11 +5,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/go-utils/v2/pathutil"
 )
 
 func Test_tryExportTestAddonArtifact(t *testing.T) {
-	tmpDir, err := pathutil.NormalizedOSTempDirPath("")
+	pathProvider := pathutil.NewPathProvider()
+	pathChecker := pathutil.NewPathChecker()
+	logger := log.NewLogger()
+
+	tmpDir, err := pathProvider.CreateTempDir("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,10 +65,10 @@ func Test_tryExportTestAddonArtifact(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tryExportTestAddonArtifact(tt.artifactPth, tt.outputDir, tt.lastOtherDirIdx); got != tt.wantIdx {
+			if got := tryExportTestAddonArtifact(tt.artifactPth, tt.outputDir, tt.lastOtherDirIdx, logger); got != tt.wantIdx {
 				t.Errorf("tryExportTestAddonArtifact() = %v, want %v", got, tt.wantIdx)
 			}
-			if exist, err := pathutil.IsPathExists(tt.wantOutputPth); err != nil {
+			if exist, err := pathChecker.IsPathExists(tt.wantOutputPth); err != nil {
 				t.Error(err)
 			} else if !exist {
 				t.Errorf("expected output file (%s) does not exist", tt.wantOutputPth)

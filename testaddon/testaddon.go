@@ -3,10 +3,11 @@ package testaddon
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 const (
@@ -37,7 +38,7 @@ func generateTestInfoFile(dir string, data []byte) error {
 
 // ExportArtifact exports artifact found at path in directory uniqueDir,
 // rooted at baseDir.
-func ExportArtifact(path, baseDir, uniqueDir string) error {
+func ExportArtifact(path, baseDir, uniqueDir string, logger log.Logger) error {
 	exportDir := filepath.Join(baseDir, uniqueDir)
 
 	if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
@@ -56,8 +57,37 @@ func ExportArtifact(path, baseDir, uniqueDir string) error {
 	}
 
 	name := filepath.Base(path)
-	if err := command.CopyFile(path, filepath.Join(exportDir, name)); err != nil {
+	if err := copyFile(path, filepath.Join(exportDir, name), logger); err != nil {
 		return fmt.Errorf("failed to export artifact (%s), error: %v", name, err)
 	}
+	return nil
+}
+
+func copyFile(src, dst string, logger log.Logger) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := srcFile.Close(); err != nil {
+			logger.Warnf("Failed to close source file (%s): %v", src, err)
+		}
+	}()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := dstFile.Close(); err != nil {
+			logger.Warnf("Failed to close destination file (%s): %v", dst, err)
+		}
+	}()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

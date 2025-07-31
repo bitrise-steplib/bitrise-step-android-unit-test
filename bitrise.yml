@@ -1,244 +1,26 @@
-format_version: 7
+format_version: "11"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - SAMPLE_REPO_GIT_CLONE_URL: https://github.com/bitrise-io/android-multiple-test-results-sample.git
-  - SAMPLE_REPO_BRANCH: maintenance
-  - SAMPLE_REPO_KOTLIN_GRADLE_URL: https://github.com/bitrise-io/android-gradle-kotlin-dsl.git
   - ORIG_BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR
 
 workflows:
   test:
-    title: Test simple android project & mono repo projects
-    before_run:
-    - audit-this-step
-    - go-tests
     after_run:
-    - test-in-src-dir
-    - test-in-src-dir-module-variant
-    - test-in-root-tmp-dir
-    - test-gradle-kts
-    - check-testaddon-export
+    - check
+    - e2e
 
-  test-in-src-dir:
-    title: Test android project & mono repo projects in source dir
+  check:
     steps:
-    - change-workdir:
-        title: cd $ORIG_BITRISE_SOURCE_DIR
-        inputs:
-        - path: $ORIG_BITRISE_SOURCE_DIR
-    - script:
-        inputs:
-        - content: rm -rf $ORIG_BITRISE_SOURCE_DIR/_tmp
-    - change-workdir:
-        title: cd  $ORIG_BITRISE_SOURCE_DIR/_tmp
-        inputs:
-        - path: ./_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
-    - path::./:
-        title: Android Unit Test (monorepo projects in source dir)
-        inputs:
-        - is_debug: "true"
-        - arguments: --warn
-    after-run:
-    - check-artifacts
+    - git::https://github.com/bitrise-steplib/steps-check.git: { }
 
-  test-in-src-dir-module-variant:
-    title: Test mono repo projects in source dir, module and variant set
+  e2e:
     steps:
-    - change-workdir:
-        title: cd $ORIG_BITRISE_SOURCE_DIR
+    - git::https://github.com/bitrise-steplib/steps-check.git:
         inputs:
-        - path: $ORIG_BITRISE_SOURCE_DIR
-    - script:
-        inputs:
-        - content: rm -rf $ORIG_BITRISE_SOURCE_DIR/_tmp
-    - change-workdir:
-        title: cd  $ORIG_BITRISE_SOURCE_DIR/_tmp
-        inputs:
-        - path: ./_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
-    - path::./:
-        title: Android Unit Test (monorepo in source dir, with module and variant set)
-        inputs:
-        - module: app
-        - variant: DemoDebug
-        - is_debug: "true"
-    after-run:
-    - check-artifacts
+        - workflow: e2e
 
-  test-in-root-tmp-dir:
-    title: Test android project & mono repo projects in /tmp dir
+  generate_readme:
     steps:
-    - script:
-        inputs:
-        - content: rm -rf /tmp/_tmp
-    - change-workdir:
-        title: cd /tmp/_tmp
-        run_if: true
-        inputs:
-        - path: /tmp/_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone -b $SAMPLE_REPO_BRANCH $SAMPLE_REPO_GIT_CLONE_URL .
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
-    - path::./:
-        title: Android Unit Test (android project & mono repo projects in /tmp dir)
-        inputs:
-        - is_debug: "true"
-    after-run:
-    - check-artifacts
-
-  test-gradle-kts:
-    title: Test android project with build.gradle.kts
-    steps:
-    - change-workdir:
-        title: cd $ORIG_BITRISE_SOURCE_DIR
-        inputs:
-        - path: $ORIG_BITRISE_SOURCE_DIR
-    - script:
-        inputs:
-        - content: rm -rf $ORIG_BITRISE_SOURCE_DIR/_tmp
-    - change-workdir:
-        title: cd  $ORIG_BITRISE_SOURCE_DIR/_tmp
-        inputs:
-        - path: ./_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone $SAMPLE_REPO_KOTLIN_GRADLE_URL .
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
-    - path::./:
-        title: Android Unit Test (android project with build.gradle.kts)
-        inputs:
-        - is_debug: "true"
-    after-run:
-    - check-artifacts
-    
-    
-  check-artifacts:
-    steps:
-    - script:
-        title: Check if files are existing
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-
-            # without timestamps
-            if [ ! -f $BITRISE_DEPLOY_DIR/another_app-reports.zip ]; then
-                exit 1
-            fi
-            if [ ! -f $BITRISE_DEPLOY_DIR/app-reports.zip ]; then
-                exit 1
-            fi
-            if [ ! -f $BITRISE_DEPLOY_DIR/another_app-test-results.zip ]; then
-                exit 1
-            fi
-            if [ ! -f $BITRISE_DEPLOY_DIR/app-test-results.zip ]; then
-                exit 1
-            fi
-
-            # with timestamps
-            if [ ! -f $(ls $BITRISE_DEPLOY_DIR/another_app-reports-20*.zip) ]; then
-                exit 1
-            fi
-            if [ ! -f $(ls $BITRISE_DEPLOY_DIR/app-reports-20*.zip) ]; then
-                exit 1
-            fi
-            if [ ! -f $(ls $BITRISE_DEPLOY_DIR/another_app-test-results-20*.zip) ]; then
-                exit 1
-            fi
-            if [ ! -f $(ls $BITRISE_DEPLOY_DIR/app-test-results-20*.zip) ]; then
-                exit 1
-            fi
-
-  check-testaddon-export:
-    steps:
-    - change-workdir:
-        title: cd $ORIG_BITRISE_SOURCE_DIR
-        inputs:
-        - path: $ORIG_BITRISE_SOURCE_DIR
-    - script:
-        inputs:
-        - content: rm -rf $ORIG_BITRISE_SOURCE_DIR/_tmp
-    - change-workdir:
-        title: cd  $ORIG_BITRISE_SOURCE_DIR/_tmp
-        inputs:
-        - path: ./_tmp
-        - is_create_path: true
-    - script:
-        inputs:
-        - content: git clone -b no-failures $SAMPLE_REPO_GIT_CLONE_URL -b code-coverage .
-    - install-missing-android-tools:
-        inputs:
-        - gradlew_path: ./gradlew
-    - script:
-        title: purge previous build artifacts
-        inputs:
-        - content: ./gradlew clean
-    - script:
-        title: purge test deploy dir (will always cause ignorable cli error)
-        inputs:
-        - content: rm -rf $BITRISE_TEST_DEPLOY_DIR/*
-    - path::./:
-        title: run step with predefined inputs
-        inputs:
-        - module: app
-        - variant: Debug
-        - is_debug: "true"
-    - script:
-        title: check exported artifacts
-        is_always_run: true
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-
-            # check directory and test-info.json existence
-            if [ $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/test-info.json" | grep -c .) -eq 0 ]; then
-                echo "ERROR: ${BITRISE_TEST_DEPLOY_DIR} does not contain app-debug/test-info.json."
-                exit 1
-            fi
-
-            # check result xml existence
-            if [ ! $(find ${BITRISE_TEST_DEPLOY_DIR} -regex ".*/app-debug/TEST.*.xml" | grep -c .) -eq 2 ]; then
-                echo "ERROR: ${BITRISE_TEST_DEPLOY_DIR} does not contain all test result XMLs."
-                exit 1
-            fi
-
-  go-tests:
-    steps:
-    - go-list:
-    - golint:
-    - errcheck:
-    - go-test:
-
-  # ----------------------------------------------------------------
-  # --- workflows to Share this step into a Step Library
-  audit-this-step:
-    steps:
-    - script:
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-            stepman audit --step-yml ./step.yml
+    - git::https://github.com/bitrise-steplib/steps-readme-generator.git@main: { }
