@@ -5,12 +5,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
 )
 
 func Test_tryExportTestAddonArtifact(t *testing.T) {
 	pathProvider := pathutil.NewPathProvider()
 	pathChecker := pathutil.NewPathChecker()
+	logger := log.NewLogger()
 
 	tmpDir, err := pathProvider.CreateTempDir("")
 	if err != nil {
@@ -63,7 +65,7 @@ func Test_tryExportTestAddonArtifact(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tryExportTestAddonArtifact(tt.artifactPth, tt.outputDir, tt.lastOtherDirIdx); got != tt.wantIdx {
+			if got := tryExportTestAddonArtifact(tt.artifactPth, tt.outputDir, tt.lastOtherDirIdx, logger); got != tt.wantIdx {
 				t.Errorf("tryExportTestAddonArtifact() = %v, want %v", got, tt.wantIdx)
 			}
 			if exist, err := pathChecker.IsPathExists(tt.wantOutputPth); err != nil {
