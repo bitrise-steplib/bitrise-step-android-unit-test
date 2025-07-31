@@ -181,14 +181,18 @@ func (e exporter) getFlakyTestSuites(testReport testreport.TestReport) []testrep
 			} else {
 				_, seen := alreadySeenFlakyTests[testCaseID]
 				if !seen && (previousIsFailed != newIsFailed) {
-					flakyTests = append(flakyTests, testCase)
+					flakyTests = append(flakyTests, testreport.TestCase{
+						XMLName:   testCase.XMLName,
+						Name:      testCase.Name,
+						ClassName: testCase.ClassName,
+					})
 					alreadySeenFlakyTests[testCaseID] = true
 				}
 			}
 		}
 
 		if len(flakyTests) > 0 {
-			flakyTestSuites = append(flakyTestSuites, testreport.TestSuite{ // TODO: do we need more fields of a TestSuite?
+			flakyTestSuites = append(flakyTestSuites, testreport.TestSuite{
 				XMLName:   suite.XMLName,
 				Name:      suite.Name,
 				TestCases: flakyTests,
