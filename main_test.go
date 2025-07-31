@@ -7,6 +7,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
 )
 
 func Test_tryExportTestAddonArtifact(t *testing.T) {
@@ -65,7 +66,7 @@ func Test_tryExportTestAddonArtifact(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tryExportTestAddonArtifact(tt.artifactPth, tt.outputDir, tt.lastOtherDirIdx, logger); got != tt.wantIdx {
+			if got := testaddon.ExportTestAddonArtifact(tt.artifactPth, tt.outputDir, tt.lastOtherDirIdx, logger); got != tt.wantIdx {
 				t.Errorf("tryExportTestAddonArtifact() = %v, want %v", got, tt.wantIdx)
 			}
 			if exist, err := pathChecker.IsPathExists(tt.wantOutputPth); err != nil {

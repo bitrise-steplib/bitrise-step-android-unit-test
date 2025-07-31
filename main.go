@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -15,9 +14,8 @@ import (
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
-	"github.com/kballard/go-shellquote"
-
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
+	"github.com/kballard/go-shellquote"
 )
 
 // Configs ...
@@ -151,7 +149,7 @@ func main() {
 		} else {
 			lastOtherDirIdx := -1
 			for _, artifact := range resultXMLs {
-				lastOtherDirIdx = tryExportTestAddonArtifact(artifact.Path, config.TestResultDir, lastOtherDirIdx, logger)
+				lastOtherDirIdx = testaddon.ExportTestAddonArtifact(artifact.Path, config.TestResultDir, lastOtherDirIdx, logger)
 			}
 		}
 	}
@@ -251,28 +249,4 @@ func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle
 		return nil, fmt.Errorf("variant %s not found in any module", variant)
 	}
 	return filteredVariants, nil
-}
-
-func tryExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int, logger log.Logger) int {
-	dir := getExportDir(artifactPth)
-
-	if dir == OtherDirName {
-		// start indexing other dir name, to avoid overrideing it
-		// e.g.: other, other-1, other-2
-		lastOtherDirIdx++
-		if lastOtherDirIdx > 0 {
-			dir = dir + "-" + strconv.Itoa(lastOtherDirIdx)
-		}
-	}
-
-	if err := testaddon.ExportArtifact(artifactPth, outputDir, dir, logger); err != nil {
-		logger.Warnf("Failed to export test results for test addon: %s", err)
-	} else {
-		src := artifactPth
-		if rel, err := workDirRel(artifactPth); err == nil {
-			src = "./" + rel
-		}
-		logger.Printf("  Export [%s => %s]", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifactPth)))
-	}
-	return lastOtherDirIdx
 }

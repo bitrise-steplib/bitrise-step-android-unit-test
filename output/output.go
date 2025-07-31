@@ -1,4 +1,4 @@
-package testaddon
+package output
 
 import (
 	"encoding/json"
@@ -6,42 +6,19 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/bitrise-io/go-utils/v2/log"
 )
+
+type Exporter interface {
+}
 
 const (
 	// ResultDescriptorFileName is the name of the test result descriptor file.
 	ResultDescriptorFileName = "test-info.json"
 )
 
-func ExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int, logger log.Logger) int {
-	dir := getExportDir(artifactPth)
-
-	if dir == OtherDirName {
-		// start indexing other dir name, to avoid overrideing it
-		// e.g.: other, other-1, other-2
-		lastOtherDirIdx++
-		if lastOtherDirIdx > 0 {
-			dir = dir + "-" + strconv.Itoa(lastOtherDirIdx)
-		}
-	}
-
-	if err := exportArtifact(artifactPth, outputDir, dir, logger); err != nil {
-		logger.Warnf("Failed to export test results for test addon: %s", err)
-	} else {
-		src := artifactPth
-		if rel, err := workDirRel(artifactPth); err == nil {
-			src = "./" + rel
-		}
-		logger.Printf("  Export [%s => %s]", src, filepath.Join("$BITRISE_TEST_RESULT_DIR", dir, filepath.Base(artifactPth)))
-	}
-	return lastOtherDirIdx
-}
-
-// exportArtifact exports artifact found at path in directory uniqueDir, rooted at baseDir.
-func exportArtifact(path, baseDir, uniqueDir string, logger log.Logger) error {
+func ExportTestResultXML(path, baseDir, uniqueDir string, logger log.Logger) error {
 	exportDir := filepath.Join(baseDir, uniqueDir)
 
 	if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
@@ -85,14 +62,6 @@ func generateTestInfoFile(dir string, data []byte) error {
 	}
 
 	return nil
-}
-
-func workDirRel(pth string) (string, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Rel(wd, pth)
 }
 
 func copyFile(src, dst string, logger log.Logger) error {
