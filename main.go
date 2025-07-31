@@ -39,7 +39,7 @@ func main() {
 	cmdFactory := command.NewFactory(envRepository)
 	pathChecker := pathutil.NewPathChecker()
 	inputParser := stepconf.NewInputParser(envRepository)
-	exporter := output.NewExporter(pathChecker, logger)
+	exporter := output.NewExporter(envRepository, pathChecker, logger)
 
 	if err := inputParser.Parse(&config); err != nil {
 		failf(logger, "Process config: couldn't create step config: %v\n", err)

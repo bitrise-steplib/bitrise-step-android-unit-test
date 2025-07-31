@@ -20,7 +20,7 @@ func ExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int,
 	dir := getExportDir(artifactPth)
 
 	if dir == OtherDirName {
-		// start indexing other dir name, to avoid overrideing it
+		// start indexing other dir name, to avoid overriding it
 		// e.g.: other, other-1, other-2
 		lastOtherDirIdx++
 		if lastOtherDirIdx > 0 {
@@ -28,7 +28,7 @@ func ExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int,
 		}
 	}
 
-	if err := exportArtifact(artifactPth, outputDir, dir, logger); err != nil {
+	if err := exportTestAddonArtifact(artifactPth, outputDir, dir, logger); err != nil {
 		return lastOtherDirIdx, err
 	} else {
 		src := artifactPth
@@ -40,27 +40,27 @@ func ExportTestAddonArtifact(artifactPth, outputDir string, lastOtherDirIdx int,
 	return lastOtherDirIdx, nil
 }
 
-// exportArtifact exports artifact found at path in directory uniqueDir, rooted at baseDir.
-func exportArtifact(path, baseDir, uniqueDir string, logger log.Logger) error {
-	exportDir := filepath.Join(baseDir, uniqueDir)
+// exportTestAddonArtifact exports artifact found at path in directory uniqueDir, rooted at baseDir.
+func exportTestAddonArtifact(path, testDeployDir, testName string, logger log.Logger) error {
+	testResultDeployDir := filepath.Join(testDeployDir, testName)
 
-	if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
-		return fmt.Errorf("skipping artifact (%s): could not ensure unique export dir (%s): %s", path, exportDir, err)
+	if err := os.MkdirAll(testResultDeployDir, os.ModePerm); err != nil {
+		return fmt.Errorf("skipping artifact (%s): could not ensure unique export dir (%s): %s", path, testResultDeployDir, err)
 	}
 
-	if _, err := os.Stat(filepath.Join(exportDir, ResultDescriptorFileName)); os.IsNotExist(err) {
-		m := map[string]string{"test-name": uniqueDir}
+	if _, err := os.Stat(filepath.Join(testResultDeployDir, ResultDescriptorFileName)); os.IsNotExist(err) {
+		m := map[string]string{"test-name": testName}
 		data, err := json.Marshal(m)
 		if err != nil {
 			return fmt.Errorf("create test info descriptor: json marshal data (%s): %s", m, err)
 		}
-		if err := generateTestInfoFile(exportDir, data); err != nil {
+		if err := generateTestInfoFile(testResultDeployDir, data); err != nil {
 			return fmt.Errorf("create test info descriptor: generate file: %s", err)
 		}
 	}
 
 	name := filepath.Base(path)
-	if err := copyFile(path, filepath.Join(exportDir, name), logger); err != nil {
+	if err := copyFile(path, filepath.Join(testResultDeployDir, name), logger); err != nil {
 		return fmt.Errorf("failed to export artifact (%s), error: %v", name, err)
 	}
 	return nil
