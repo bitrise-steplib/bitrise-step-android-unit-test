@@ -134,7 +134,6 @@ func main() {
 		// Test Addon is turned on
 		fmt.Println()
 		logger.Infof("Export XML results for test addon:")
-		fmt.Println()
 
 		xmlResultFilePattern := config.XMLResultDirPattern
 		if !strings.HasSuffix(xmlResultFilePattern, "*.xml") {
@@ -147,10 +146,13 @@ func main() {
 		if err != nil {
 			logger.Warnf("Failed to find test XML test results, error: %s", err)
 		} else {
-			if err := exporter.ExportTestAddonArtifacts(config.TestResultDir, resultXMLs); err != nil {
+			exportedResultXMLs, err := exporter.ExportTestAddonArtifacts(config.TestResultDir, resultXMLs)
+			if err != nil {
 				logger.Warnf("Failed to export test XML test results, error: %s", err)
-			} else {
-				logger.Donef("Exported %d XML test result files for test addon", len(resultXMLs))
+			}
+
+			if err := exporter.ExportFlakyTestsEnvVar(exportedResultXMLs); err != nil {
+				logger.Warnf("Failed to export flaky tests env var, error: %s", err)
 			}
 		}
 	}

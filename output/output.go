@@ -23,7 +23,8 @@ const (
 
 type Exporter interface {
 	ExportArtifacts(deployDir string, artifacts []gradle.Artifact) error
-	ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact) error
+	ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact) ([]gradle.Artifact, error)
+	ExportFlakyTestsEnvVar(artifacts []gradle.Artifact) error
 }
 
 type exporter struct {
@@ -71,19 +72,47 @@ func (e exporter) ExportArtifacts(deployDir string, artifacts []gradle.Artifact)
 	return nil
 }
 
-func (e exporter) ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact) error {
+func (e exporter) ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact) ([]gradle.Artifact, error) {
+	if len(artifacts) == 0 {
+		return nil, nil
+	}
+
 	lastOtherDirIdx := -1
 	var exportErrs []error
-
-	var flakyTestSuites []testreport.TestSuite
+	var exportedArtifacts []gradle.Artifact
 
 	for _, artifact := range artifacts {
 		var err error
 		lastOtherDirIdx, err = testaddon.ExportTestAddonArtifact(artifact.Path, testDeployDir, lastOtherDirIdx, e.logger)
 		if err != nil {
 			exportErrs = append(exportErrs, fmt.Errorf("failed to export test addon artifact (%s): %w", artifact.Path, err))
+		} else {
+			exportedArtifacts = append(exportedArtifacts, artifact)
 		}
+	}
 
+	if len(exportErrs) > 0 {
+		errMsg := ""
+		for _, err := range exportErrs {
+			errMsg += fmt.Sprintf("- %s\n", err.Error())
+		}
+		return exportedArtifacts, fmt.Errorf("failed to export %d/%d test artifacts:\n%s", len(exportErrs), len(artifacts), errMsg)
+	}
+
+	e.logger.Donef("Exported %d XML test result files for test addon", len(artifacts))
+
+	return exportedArtifacts, nil
+}
+
+func (e exporter) ExportFlakyTestsEnvVar(artifacts []gradle.Artifact) error {
+	if len(artifacts) == 0 {
+		return nil
+	}
+
+	var exportErrs []error
+	var flakyTestSuites []testreport.TestSuite
+
+	for _, artifact := range artifacts {
 		testReport, err := e.convertTestReport(artifact.Path)
 		if err != nil {
 			exportErrs = append(exportErrs, fmt.Errorf("failed to convert test report (%s): %w", artifact.Path, err))
@@ -197,7 +226,7 @@ func (e exporter) exportFlakyTestCasesEnvVar(flakyTestSuites []testreport.TestSu
 	}
 
 	if len(flakyTestCases) > 0 {
-		e.logger.Printf("Found %d flaky test cases, exporting %s env var", len(flakyTestCases), flakyTestCasesEnvVarKey)
+		e.logger.Donef("Found %d flaky test case(s), exporting %s env var", len(flakyTestCases), flakyTestCasesEnvVarKey)
 	}
 
 	var flakyTestCasesMessage string
