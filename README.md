@@ -34,7 +34,10 @@ You can also run this step directly with [Bitrise CLI](https://github.com/bitris
 
 <details>
 <summary>Outputs</summary>
-There are no outputs defined in this step
+
+| Environment Variable | Description |
+| --- | --- |
+| `BITRISE_FLAKY_TEST_CASES` | A test case is considered flaky if it has failed at least once, but passed at least once as well.  The list contains the test cases in the following format: ``` - TestSuit_1.TestClass_1.TestName_1 - TestSuit_1.TestClass_1.TestName_2 - TestSuit_1.TestClass_2.TestName_1 - TestSuit_2.TestClass_1.TestName_1 ... ``` |
 </details>
 
 ## 🙋 Contributing
