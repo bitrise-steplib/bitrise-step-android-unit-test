@@ -17,7 +17,6 @@ import (
 )
 
 const (
-	// TODO: add the new Step Output
 	flakyTestCasesEnvVarKey              = "BITRISE_FLAKY_TEST_CASES"
 	flakyTestCasesEnvVarSizeLimitInBytes = 1024
 )
