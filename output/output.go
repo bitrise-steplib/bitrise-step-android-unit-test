@@ -18,8 +18,7 @@ import (
 
 const (
 	// TODO: add the new Step Output
-	flakyTestCasesEnvVarKey = "BITRISE_FLAKY_TEST_CASES"
-	// TODO: limit the size of the env var
+	flakyTestCasesEnvVarKey              = "BITRISE_FLAKY_TEST_CASES"
 	flakyTestCasesEnvVarSizeLimitInBytes = 1024
 )
 
@@ -231,15 +230,15 @@ func (e exporter) exportFlakyTestCasesEnvVar(flakyTestSuites []testreport.TestSu
 	}
 
 	if len(flakyTestCases) > 0 {
-		e.logger.Donef("Found %d flaky test case(s), exporting %s env var", len(flakyTestCases), flakyTestCasesEnvVarKey)
+		e.logger.Donef("%d flaky test case(s) detected, exporting %s env var", len(flakyTestCases), flakyTestCasesEnvVarKey)
 	}
 
 	var flakyTestCasesMessage string
 	for i, flakyTestCase := range flakyTestCases {
 		flakyTestCasesMessageLine := fmt.Sprintf("- %s\n", flakyTestCase)
 
-		if len(flakyTestCasesMessage)+len(flakyTestCasesMessageLine) > 1024 {
-			e.logger.Warnf("%s env var size limit (1024 characters) exceeded. Skipping %d test cases.", flakyTestCasesEnvVarKey, len(flakyTestCases)-i)
+		if len(flakyTestCasesMessage)+len(flakyTestCasesMessageLine) > flakyTestCasesEnvVarSizeLimitInBytes {
+			e.logger.Warnf("%s env var size limit (%d characters) exceeded. Skipping %d test cases.", flakyTestCasesEnvVarKey, flakyTestCasesEnvVarSizeLimitInBytes, len(flakyTestCases)-i)
 			break
 		}
 
