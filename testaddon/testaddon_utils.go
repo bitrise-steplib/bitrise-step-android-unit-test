@@ -1,4 +1,4 @@
-package main
+package testaddon
 
 import (
 	"fmt"
@@ -11,23 +11,12 @@ import (
 const OtherDirName = "other"
 
 func getExportDir(artifactPath string) string {
-	dir, err := getVariantDir(artifactPath)
+	modules, variant, err := getModuleAndVariant(artifactPath)
 	if err != nil {
 		return OtherDirName
 	}
 
-	return dir
-}
-
-// indexOfTestResultsDirName finds the index of "test-results" in the given path parts, othervise returns -1
-func indexOfTestResultsDirName(pthParts []string) int {
-	// example: ./app/build/test-results/testDebugUnitTest/TEST-sample.results.test.multiple.bitrise.com.multipletestresultssample.UnitTest0.xml
-	for i, part := range pthParts {
-		if part == "test-results" {
-			return i
-		}
-	}
-	return -1
+	return modules + "-" + variant
 }
 
 func lowercaseFirstLetter(str string) string {
@@ -65,24 +54,35 @@ func parseModuleName(pthParts []string, testResultsPartIdx int) (string, error) 
 	return pthParts[testResultsPartIdx-2], nil
 }
 
-// getVariantDir returns the unique subdirectory inside the test addon export directory for a given artifact.
-func getVariantDir(path string) (string, error) {
+// getVariantDir parses model and variant from the given artifact path.
+func getModuleAndVariant(path string) (string, string, error) {
 	parts := strings.Split(path, "/")
 
 	i := indexOfTestResultsDirName(parts)
 	if i == -1 {
-		return "", fmt.Errorf("path (%s) does not contain 'test-results' folder", path)
+		return "", "", fmt.Errorf("path (%s) does not contain 'test-results' folder", path)
 	}
 
 	variant, err := parseVariantName(parts, i)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse variant name: %s", err)
+		return "", "", fmt.Errorf("failed to parse variant name: %s", err)
 	}
 
 	module, err := parseModuleName(parts, i)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse module name: %s", err)
+		return "", variant, fmt.Errorf("failed to parse module name: %s", err)
 	}
 
-	return module + "-" + variant, nil
+	return module, variant, nil
+}
+
+// indexOfTestResultsDirName finds the index of "test-results" in the given path parts, othervise returns -1
+func indexOfTestResultsDirName(pthParts []string) int {
+	// example: ./app/build/test-results/testDebugUnitTest/TEST-sample.results.test.multiple.bitrise.com.multipletestresultssample.UnitTest0.xml
+	for i, part := range pthParts {
+		if part == "test-results" {
+			return i
+		}
+	}
+	return -1
 }
