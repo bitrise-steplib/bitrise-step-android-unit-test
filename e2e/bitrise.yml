@@ -58,6 +58,34 @@ workflows:
         - module: app
         - variant: Release
 
+  test_skip_testing:
+    title: Test skip_testing input
+    steps:
+    - bundle::setup-test-app:
+        inputs:
+        - sample_app_url: https://github.com/bitrise-samples/android-gradle-kotlin-dsl.git
+        - sample_app_branch: add-more-tests
+    - path::./:
+        inputs:
+        - module: app
+        - variant: debug
+        - skip_testing: "org.gradle.kotlin.dsl.samples.androidstudio.ExampleUnitTest.addition_isCorrect"
+    - script:
+        title: Check if skipped tests are really skipped
+        inputs:
+        - content: |
+            test_results_xml_path="./app/build/test-results/testDebugUnitTest/TEST-org.gradle.kotlin.dsl.samples.androidstudio.ExampleUnitTest.xml"
+            if [ ! -f "$test_results_xml_path" ]; then
+              echo "No test results xml found at: $test_results_xml_path"
+              exit 1
+            fi
+            if grep -q '<testcase name="addition_isCorrect"' "$test_results_xml_path"; then
+              echo "The skipped test was found in the test results xml."
+              exit 1
+            else
+              echo "The skipped test was NOT found in the test results xml."
+            fi
+
 step_bundles:
   setup-test-app:
     inputs:

@@ -21,6 +21,28 @@ workflows:
         inputs:
         - workflow: e2e
 
+  sample:
+    steps:
+    - script:
+        inputs:
+        - content: rm -rf "${ORIG_BITRISE_SOURCE_DIR}/_tmp"
+    - change-workdir:
+        is_always_run: true
+        inputs:
+        - path: ${ORIG_BITRISE_SOURCE_DIR}/_tmp
+        - is_create_path: true
+    - git::https://github.com/bitrise-steplib/bitrise-step-simple-git-clone.git@master:
+        inputs:
+        - repository_url: https://github.com/bitrise-samples/android-gradle-kotlin-dsl.git
+        - branch: add-more-tests
+        - clone_into_dir: ./
+    - path::./:
+        inputs:
+        - project_location: ./
+        - module: app
+        - variant: debug
+        - skip_testing: "org.gradle.kotlin.dsl.samples.androidstudio.ExampleUnitTest.addition_isCorrect"
+
   generate_readme:
     steps:
     - git::https://github.com/bitrise-steplib/steps-readme-generator.git@main: { }
