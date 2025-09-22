@@ -69,7 +69,7 @@ workflows:
         inputs:
         - module: app
         - variant: debug
-        - skip_testing: "org.gradle.kotlin.dsl.samples.androidstudio.ExampleUnitTest.addition_isCorrect"
+        - skip_testing: org.gradle.kotlin.dsl.samples.androidstudio.ExampleUnitTest.addition_isCorrect
     - script:
         title: Check if skipped tests are really skipped
         inputs:
