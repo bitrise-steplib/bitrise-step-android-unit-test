@@ -13,20 +13,25 @@ import (
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/bitrise-steplib/bitrise-step-android-unit-test/gradleconfig"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/output"
 	"github.com/kballard/go-shellquote"
 )
 
 // Configs ...
 type Configs struct {
-	ProjectLocation      string `env:"project_location,dir"`
+	ProjectLocation string `env:"project_location,dir"`
+	Module          string `env:"module"`
+	Variant         string `env:"variant"`
+	// Test Selection
+	SkipTesting string `env:"skip_testing"`
+	// Options
+	Arguments            string `env:"arguments"`
 	HTMLResultDirPattern string `env:"report_path_pattern"`
 	XMLResultDirPattern  string `env:"result_path_pattern"`
-	Variant              string `env:"variant"`
-	Module               string `env:"module"`
-	Arguments            string `env:"arguments"`
-	IsDebug              bool   `env:"is_debug,opt[true,false]"`
-
+	// Debug
+	IsDebug bool `env:"is_debug,opt[true,false]"`
+	// Defaults
 	DeployDir     string `env:"BITRISE_DEPLOY_DIR"`
 	TestResultDir string `env:"BITRISE_TEST_RESULT_DIR"`
 }
@@ -87,6 +92,25 @@ func main() {
 		}
 	}
 	fmt.Println()
+
+	skipTesting := strings.TrimSpace(config.SkipTesting)
+	if skipTesting != "" {
+		identifiers := strings.Split(skipTesting, "\n")
+		identifiers = removeEmptyLines(identifiers)
+
+		logger.Infof("Skipping %d test(s)", len(identifiers))
+
+		if initScriptPth, err := gradleconfig.WriteSkipTestingInitScript(identifiers); err != nil {
+			failf(logger, "Run: failed to write init script: %s", err)
+		} else {
+			defer func() {
+				logger.Printf("Removing skip testing init script: %s", initScriptPth)
+				if err := os.RemoveAll(initScriptPth); err != nil {
+					logger.Warnf("Run: failed to remove skip testing init script (%s): %s", initScriptPth, err)
+				}
+			}()
+		}
+	}
 
 	started := time.Now()
 
@@ -216,4 +240,15 @@ func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle
 		return nil, fmt.Errorf("variant %s not found in any module", variant)
 	}
 	return filteredVariants, nil
+}
+
+func removeEmptyLines(lines []string) []string {
+	var result []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			result = append(result, line)
+		}
+	}
+	return result
 }

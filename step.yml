@@ -50,6 +50,24 @@ inputs:
       To see your available variants, please open your project in Android Studio, go to **Project Structure**, then to the **variants** section.
       Leave this input blank to test all variants.
     is_required: false
+- skip_testing:
+  opts:
+    category: Test Selection
+    title: Test name list to skip
+    summary: The step will skip the listed tests.
+    description: |-
+      The step will skip the listed tests.
+
+      Based on this input, a Gradle init script will be generated, which sets excludeTestsMatching filter for the test task.
+
+      You can enter multiple test names separated by a newline.
+      Wildcard '*' is supported, either test method name or class name is supported. 
+      Examples of test names:
+      - "com.foo.FooTest.someMethod"
+      - "com.foo.FooTest"
+      - "*FooTest*"
+      - "com.foo*"
+      - "*someTestMethod"
 - arguments:
   opts:
     category: Options
