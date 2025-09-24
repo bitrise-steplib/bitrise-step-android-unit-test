@@ -9,6 +9,7 @@ import (
 
 	"github.com/bitrise-io/go-android/v2/gradle"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
+	"github.com/bitrise-io/go-steputils/v2/testquarantine"
 	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
@@ -23,14 +24,13 @@ type Configs struct {
 	ProjectLocation string `env:"project_location,dir"`
 	Module          string `env:"module"`
 	Variant         string `env:"variant"`
-	// Test Selection
-	SkipTesting string `env:"skip_testing"`
 	// Options
 	Arguments            string `env:"arguments"`
 	HTMLResultDirPattern string `env:"report_path_pattern"`
 	XMLResultDirPattern  string `env:"result_path_pattern"`
 	// Debug
-	IsDebug bool `env:"is_debug,opt[true,false]"`
+	IsDebug          bool   `env:"is_debug,opt[true,false]"`
+	QuarantinedTests string `env:"quarantined_tests"`
 	// Defaults
 	DeployDir     string `env:"BITRISE_DEPLOY_DIR"`
 	TestResultDir string `env:"BITRISE_TEST_RESULT_DIR"`
@@ -93,14 +93,15 @@ func main() {
 	}
 	fmt.Println()
 
-	skipTesting := strings.TrimSpace(config.SkipTesting)
-	if skipTesting != "" {
-		identifiers := strings.Split(skipTesting, "\n")
-		identifiers = removeEmptyLines(identifiers)
+	testIdentifiers, err := parseQuarantinedTests(config.QuarantinedTests)
+	if err != nil {
+		failf(logger, "Run: failed to parse quarantined tests, error: %s", err)
+	}
 
-		logger.Infof("Skipping %d test(s)", len(identifiers))
+	if len(testIdentifiers) > 0 {
+		logger.Infof("Skipping %d test(s)", len(testIdentifiers))
 
-		if initScriptPth, err := gradleconfig.WriteSkipTestingInitScript(identifiers); err != nil {
+		if initScriptPth, err := gradleconfig.WriteSkipTestingInitScript(testIdentifiers); err != nil {
 			failf(logger, "Run: failed to write init script: %s", err)
 		} else {
 			defer func() {
@@ -251,4 +252,29 @@ func removeEmptyLines(lines []string) []string {
 		}
 	}
 	return result
+}
+
+func parseQuarantinedTests(input string) ([]string, error) {
+	if input == "" {
+		return nil, nil
+	}
+
+	quarantinedTests, err := testquarantine.ParseQuarantinedTests(input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse quarantined tests input: %w", err)
+	}
+
+	var skippedTests []string
+	for _, qt := range quarantinedTests {
+		if len(qt.TestSuiteName) == 0 || qt.TestSuiteName[0] == "" || qt.ClassName == "" || qt.TestCaseName == "" {
+			continue
+		}
+
+		packageName := qt.TestSuiteName[0]
+		className := qt.ClassName
+		testMethod := qt.TestCaseName
+
+		skippedTests = append(skippedTests, fmt.Sprintf("%s.%s.%s", packageName, className, testMethod))
+	}
+	return skippedTests, nil
 }

@@ -41,7 +41,16 @@ workflows:
         - project_location: ./
         - module: app
         - variant: debug
-        - skip_testing: org.gradle.kotlin.dsl.samples.androidstudio.ExampleUnitTest.addition_isCorrect
+        - quarantined_tests: |-
+            [
+              {
+                "testCaseName": "subtraction_isCorrect",
+                "testSuiteName": [
+                  "org.gradle.kotlin.dsl.samples.androidstudio"
+                ],
+                "className": "ExampleUnitTest"
+              }
+            ]
 
   generate_readme:
     steps:
