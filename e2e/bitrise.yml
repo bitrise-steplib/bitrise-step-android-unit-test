@@ -58,8 +58,8 @@ workflows:
         - module: app
         - variant: Release
 
-  test_skip_testing:
-    title: Test skip_testing input
+  test_quarantined_tests:
+    title: Test quarantined_tests input
     steps:
     - bundle::setup-test-app:
         inputs:
@@ -69,7 +69,16 @@ workflows:
         inputs:
         - module: app
         - variant: debug
-        - skip_testing: org.gradle.kotlin.dsl.samples.androidstudio.ExampleUnitTest.addition_isCorrect
+        - quarantined_tests: |-
+            [
+              {
+                "testCaseName": "addition_isCorrect",
+                "testSuiteName": [
+                  "org.gradle.kotlin.dsl.samples.androidstudio"
+                ],
+                "className": "ExampleUnitTest"
+              }
+            ]
     - script:
         title: Check if skipped tests are really skipped
         inputs:
