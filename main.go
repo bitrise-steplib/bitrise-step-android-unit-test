@@ -243,17 +243,6 @@ func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle
 	return filteredVariants, nil
 }
 
-func removeEmptyLines(lines []string) []string {
-	var result []string
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			result = append(result, line)
-		}
-	}
-	return result
-}
-
 func parseQuarantinedTests(input string) ([]string, error) {
 	if input == "" {
 		return nil, nil
