@@ -57,9 +57,9 @@ workflows:
               {
                 "testCaseName": "addition_isCorrect",
                 "testSuiteName": [
-                  "org.gradle.kotlin.dsl.samples.androidstudio"
+                  "app-debug"
                 ],
-                "className": "ExampleUnitTest"
+                "className": "org.gradle.kotlin.dsl.samples.androidstudio.ExampleUnitTest"
               }
             ]
     - bundle::check-artifacts:

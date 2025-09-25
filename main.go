@@ -255,15 +255,14 @@ func parseQuarantinedTests(input string) ([]string, error) {
 
 	var skippedTests []string
 	for _, qt := range quarantinedTests {
-		if len(qt.TestSuiteName) == 0 || qt.TestSuiteName[0] == "" || qt.ClassName == "" || qt.TestCaseName == "" {
+		if qt.ClassName == "" || qt.TestCaseName == "" {
 			continue
 		}
 
-		packageName := qt.TestSuiteName[0]
-		className := qt.ClassName
-		testMethod := qt.TestCaseName
+		packageAndClassName := qt.ClassName
+		testMethodName := qt.TestCaseName
 
-		skippedTests = append(skippedTests, fmt.Sprintf("%s.%s.%s", packageName, className, testMethod))
+		skippedTests = append(skippedTests, fmt.Sprintf("%s.%s", packageAndClassName, testMethodName))
 	}
 	return skippedTests, nil
 }
