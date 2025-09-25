@@ -2,7 +2,6 @@ package gradleconfig
 
 import (
 	"bytes"
-	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,11 +12,15 @@ import (
 )
 
 const (
-	gradleHomeNonExpanded = "~/.gradle"
+	gradleHomeNonExpanded                    = "~/.gradle"
+	testSkippingGradleInitScriptTemplateText = `allprojects {
+    tasks.withType<Test>().configureEach {
+        {{- range .ExcludedTests }}
+        filter.excludeTestsMatching("{{ . }}")
+        {{- end }}
+    }
+}`
 )
-
-//go:embed test-skipping.init.gradle.kts.gotemplate
-var testSkippingGradleInitScriptTemplateText string
 
 type skipTestingTemplateData struct {
 	ExcludedTests []string

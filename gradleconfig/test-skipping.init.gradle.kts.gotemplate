@@ -1,7 +1,0 @@
-allprojects {
-    tasks.withType<Test>().configureEach {
-        {{- range .ExcludedTests }}
-        filter.excludeTestsMatching("{{ . }}")
-        {{- end }}
-    }
-}
