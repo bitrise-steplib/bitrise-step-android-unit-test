@@ -61,7 +61,7 @@ func (e exporter) ExportArtifacts(deployDir string, artifacts []gradle.Artifact)
 			src = "./" + rel
 		}
 
-		e.logger.Printf("  Export [ %s => $BITRISE_DEPLOY_DIR/%s ]", src, artifact.Name)
+		e.logger.Printf("Exporting %s => $BITRISE_DEPLOY_DIR/%s", src, artifact.Name)
 
 		if err := artifact.ExportZIP(deployDir); err != nil {
 			e.logger.Warnf("failed to export artifact (%s), error: %v", artifact.Path, err)
@@ -97,8 +97,6 @@ func (e exporter) ExportTestAddonArtifacts(testDeployDir string, artifacts []gra
 		}
 		return exportedArtifacts, fmt.Errorf("failed to export %d/%d test artifacts:\n%s", len(exportErrs), len(artifacts), errMsg)
 	}
-
-	e.logger.Donef("Exported %d XML test result files for test addon", len(artifacts))
 
 	return exportedArtifacts, nil
 }

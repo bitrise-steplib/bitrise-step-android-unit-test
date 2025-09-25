@@ -37,9 +37,17 @@ type Configs struct {
 }
 
 func main() {
+	logger := log.NewLogger()
+
+	if err := runStep(logger); err != nil {
+		logger.Errorf("%s", err)
+		os.Exit(1)
+	}
+}
+
+func runStep(logger log.Logger) error {
 	var config Configs
 
-	logger := log.NewLogger()
 	envRepository := env.NewRepository()
 	cmdFactory := command.NewFactory(envRepository)
 	pathChecker := pathutil.NewPathChecker()
@@ -47,38 +55,36 @@ func main() {
 	exporter := output.NewExporter(envRepository, pathChecker, logger)
 
 	if err := inputParser.Parse(&config); err != nil {
-		failf(logger, "Process config: couldn't create step config: %v\n", err)
+		return fmt.Errorf("Process config: couldn't create step config: %v\n", err)
 	}
 
 	stepconf.Print(config)
 
 	logger.EnableDebugLog(config.IsDebug)
 
-	logger.Println()
-
 	gradleProject, err := gradle.NewProject(config.ProjectLocation, cmdFactory)
 	if err != nil {
-		failf(logger, "Process config: failed to open project, error: %s", err)
+		return fmt.Errorf("Process config: failed to open project, error: %s", err)
 	}
 
 	testTask := gradleProject.GetTask("test")
 
 	args, err := shellquote.Split(config.Arguments)
 	if err != nil {
-		failf(logger, "Process config: failed to parse arguments, error: %s", err)
+		return fmt.Errorf("Process config: failed to parse arguments, error: %s", err)
 	}
 
+	logger.Println()
 	logger.Infof("Variants:")
-	fmt.Println()
 
 	variants, err := testTask.GetVariants(args...)
 	if err != nil {
-		failf(logger, "Run: failed to fetch variants, error: %s", err)
+		return fmt.Errorf("Run: failed to fetch variants, error: %s", err)
 	}
 
 	filteredVariants, err := filterVariants(config.Module, config.Variant, variants)
 	if err != nil {
-		failf(logger, "Run: failed to find buildable variants, error: %s", err)
+		return fmt.Errorf("Run: failed to find buildable variants, error: %s", err)
 	}
 
 	for module, variants := range variants {
@@ -91,73 +97,74 @@ func main() {
 			}
 		}
 	}
-	fmt.Println()
 
 	testIdentifiers, err := parseQuarantinedTests(config.QuarantinedTests)
 	if err != nil {
-		failf(logger, "Run: failed to parse quarantined tests, error: %s", err)
+		return fmt.Errorf("Run: failed to parse quarantined tests, error: %s", err)
 	}
 
 	if len(testIdentifiers) > 0 {
-		logger.Infof("Skipping %d test(s)", len(testIdentifiers))
+		logger.Println()
+		logger.Infof("%d quarantined test(s) found", len(testIdentifiers))
+		logger.Printf("Writing Gradle init script for excluding quarantined tests...")
 
-		if initScriptPth, err := gradleconfig.WriteSkipTestingInitScript(testIdentifiers); err != nil {
-			failf(logger, "Run: failed to write init script: %s", err)
-		} else {
-			defer func() {
-				logger.Printf("Removing skip testing init script: %s", initScriptPth)
-				if err := os.RemoveAll(initScriptPth); err != nil {
-					logger.Warnf("Run: failed to remove skip testing init script (%s): %s", initScriptPth, err)
-				}
-			}()
+		initScriptPth, err := gradleconfig.WriteSkipTestingInitScript(testIdentifiers)
+		if err != nil {
+			return fmt.Errorf("Run: failed to write quarantine init script: %s", err)
 		}
+		defer func() {
+			logger.Println()
+			logger.Printf("Removing test quarantine init script: %s", initScriptPth)
+			if err := os.RemoveAll(initScriptPth); err != nil {
+				logger.Warnf("Run: failed to remove skip testing init script (%s): %s", initScriptPth, err)
+			}
+		}()
 	}
 
 	started := time.Now()
 
 	var testErr error
 
+	logger.Println()
 	logger.Infof("Run test:")
 	testCommand := testTask.GetCommand(filteredVariants, args...)
-
-	fmt.Println()
 	logger.Donef("$ " + testCommand.PrintableCommandArgs())
-	fmt.Println()
 
 	testErr = testCommand.Run()
 	if testErr != nil {
 		logger.Errorf("Run: test task failed, error: %v", testErr)
+	} else {
+		logger.Donef("Successful test run")
 	}
-	fmt.Println()
+
+	logger.Println()
 	logger.Infof("Export HTML results:")
-	fmt.Println()
 
 	reports, err := getArtifacts(gradleProject, started, config.HTMLResultDirPattern, true, true, logger)
 	if err != nil {
-		failf(logger, "Export outputs: failed to find reports, error: %v", err)
+		return fmt.Errorf("Export outputs: failed to find reports, error: %v", err)
 	}
 
 	if err := exporter.ExportArtifacts(config.DeployDir, reports); err != nil {
-		failf(logger, "Export outputs: failed to export reports, error: %v", err)
+		return fmt.Errorf("Export outputs: failed to export reports, error: %v", err)
 	}
 
-	fmt.Println()
+	logger.Println()
 	logger.Infof("Export XML results:")
-	fmt.Println()
 
 	// <project_dir>/app/build/test-results
 	results, err := getArtifacts(gradleProject, started, config.XMLResultDirPattern, true, true, logger)
 	if err != nil {
-		failf(logger, "Export outputs: failed to find results, error: %v", err)
+		return fmt.Errorf("Export outputs: failed to find results, error: %v", err)
 	}
 
 	if err := exporter.ExportArtifacts(config.DeployDir, results); err != nil {
-		failf(logger, "Export outputs: failed to export results, error: %v", err)
+		return fmt.Errorf("Export outputs: failed to export results, error: %v", err)
 	}
 
 	if config.TestResultDir != "" {
 		// Test Addon is turned on
-		fmt.Println()
+		logger.Println()
 		logger.Infof("Export XML results for test addon:")
 
 		xmlResultFilePattern := config.XMLResultDirPattern
@@ -183,13 +190,10 @@ func main() {
 	}
 
 	if testErr != nil {
-		os.Exit(1)
+		return fmt.Errorf("Running tests failed: %w", testErr)
 	}
-}
 
-func failf(logger log.Logger, f string, args ...interface{}) {
-	logger.Errorf(f, args...)
-	os.Exit(1)
+	return nil
 }
 
 func getArtifacts(gradleProject gradle.Project, started time.Time, pattern string, includeModuleName bool, isDirectoryMode bool, logger log.Logger) (artifacts []gradle.Artifact, err error) {
@@ -206,7 +210,7 @@ func getArtifacts(gradleProject gradle.Project, started time.Time, pattern strin
 			if t == started {
 				logger.Warnf("No artifacts found with pattern: %s that has modification time after: %s", pattern, t)
 				logger.Warnf("Retrying without modtime check....")
-				fmt.Println()
+				logger.Println()
 				continue
 			}
 			logger.Warnf("No artifacts found with pattern: %s without modtime check", pattern)
