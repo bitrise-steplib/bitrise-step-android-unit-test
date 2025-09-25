@@ -34,7 +34,7 @@ workflows:
     - git::https://github.com/bitrise-steplib/bitrise-step-simple-git-clone.git@master:
         inputs:
         - repository_url: https://github.com/bitrise-samples/android-gradle-kotlin-dsl.git
-        - branch: add-more-tests
+        - branch: master
         - clone_into_dir: ./
     - path::./:
         inputs:

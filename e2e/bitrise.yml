@@ -47,7 +47,7 @@ workflows:
     - bundle::setup-test-app:
         inputs:
         - sample_app_url: https://github.com/bitrise-samples/android-gradle-kotlin-dsl.git
-        - sample_app_branch: add-more-tests
+        - sample_app_branch: master
     - path::./:
         inputs:
         - module: app
