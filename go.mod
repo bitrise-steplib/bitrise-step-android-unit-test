@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/bitrise-io/go-android/v2 v2.0.0-alpha.10
-	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.39.0.20250923144217-d27f95bcbc58
+	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.40
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.27
 	github.com/bitrise-steplib/steps-deploy-to-bitrise-io v0.0.0-20250728133502-5ac534b2874f
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51

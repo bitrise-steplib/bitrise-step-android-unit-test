@@ -1,7 +1,7 @@
 # github.com/bitrise-io/go-android/v2 v2.0.0-alpha.10
 ## explicit; go 1.16
 github.com/bitrise-io/go-android/v2/gradle
-# github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.39.0.20250923144217-d27f95bcbc58
+# github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.40
 ## explicit; go 1.17
 github.com/bitrise-io/go-steputils/v2/stepconf
 github.com/bitrise-io/go-steputils/v2/testquarantine
