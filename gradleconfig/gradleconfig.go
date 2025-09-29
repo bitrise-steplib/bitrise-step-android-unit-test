@@ -3,7 +3,6 @@ package gradleconfig
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"path/filepath"
 	"text/template"
 
@@ -12,7 +11,6 @@ import (
 )
 
 const (
-	gradleHomeNonExpanded                    = "~/.gradle"
 	testSkippingGradleInitScriptTemplateText = `allprojects {
     tasks.withType<Test>().configureEach {
         {{- range .ExcludedTests }}
@@ -27,14 +25,9 @@ type skipTestingTemplateData struct {
 }
 
 func WriteSkipTestingInitScript(skipTesting []string) (string, error) {
-	gradleHome, err := pathutil.NewPathModifier().AbsPath(gradleHomeNonExpanded)
-	if err != nil {
-		return "", fmt.Errorf("expand Gradle home path (%s): %w", gradleHome, err)
-	}
-
-	gradleInitDPath := filepath.Join(gradleHome, "init.d")
-	if err := os.MkdirAll(gradleInitDPath, 0o755); err != nil {
-		return "", fmt.Errorf("create Gradle init.d dir (%s): %w", gradleInitDPath, err)
+	tmpDir, er := pathutil.NewPathProvider().CreateTempDir("gradle")
+	if er != nil {
+		return "", fmt.Errorf("create temp dir for Gradle init script: %w", er)
 	}
 
 	initScriptContent, err := generateTestSkippingGradleInitScriptContent(skipTesting)
@@ -42,7 +35,7 @@ func WriteSkipTestingInitScript(skipTesting []string) (string, error) {
 		return "", fmt.Errorf("generate Gradle init script content: %w", err)
 	}
 
-	initGradlePath := filepath.Join(gradleInitDPath, "bitrise-test-skipping.init.gradle.kts")
+	initGradlePath := filepath.Join(tmpDir, "bitrise-test-skipping.init.gradle.kts")
 	err = fileutil.NewFileManager().Write(initGradlePath, initScriptContent, 0o755)
 	if err != nil {
 		return "", fmt.Errorf("write Gradle init script (%s): %w", initGradlePath, err)

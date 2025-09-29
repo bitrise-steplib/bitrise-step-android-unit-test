@@ -103,15 +103,27 @@ func runStep(logger log.Logger) error {
 		return fmt.Errorf("Run: failed to parse quarantined tests, error: %s", err)
 	}
 
+	var initScriptPth string
 	if len(testIdentifiers) > 0 {
+		for _, arg := range args {
+			if strings.HasPrefix(arg, "--init-script") {
+				return fmt.Errorf("Run: --init-script argument cannot be used together with quarantined_tests input")
+			} else if strings.HasPrefix(arg, "-I") {
+				return fmt.Errorf("Run: -I argument cannot be used together with quarantined_tests input")
+			}
+		}
+
 		logger.Println()
 		logger.Infof("%d quarantined test(s) found", len(testIdentifiers))
 		logger.Printf("Writing Gradle init script for excluding quarantined tests...")
 
-		initScriptPth, err := gradleconfig.WriteSkipTestingInitScript(testIdentifiers)
+		initScriptPth, err = gradleconfig.WriteSkipTestingInitScript(testIdentifiers)
 		if err != nil {
 			return fmt.Errorf("Run: failed to write quarantine init script: %s", err)
 		}
+
+		args = append(args, "--init-script", initScriptPth)
+
 		defer func() {
 			logger.Println()
 			logger.Printf("Removing test quarantine init script: %s", initScriptPth)
