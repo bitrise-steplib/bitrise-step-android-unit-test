@@ -2,7 +2,6 @@ package gradle
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,17 +48,17 @@ func NewProject(location string, cmdFactory command.Factory) (Project, error) {
 
 	root := filepath.Join(location, "..")
 
-	files, err := ioutil.ReadDir(root)
+	entries, err := os.ReadDir(root)
 	if err != nil {
-		return Project{}, err
+		return Project{}, fmt.Errorf("failed to read entries of %s: %w", root, err)
 	}
 
 	projectsCount := 0
-	for _, file := range files {
-		if file.IsDir() {
-			if buildGradleExists, err := pathutil.IsPathExists(filepath.Join(root, file.Name(), "build.gradle")); err != nil {
+	for _, entry := range entries {
+		if entry.IsDir() {
+			if buildGradleExists, err := pathutil.IsPathExists(filepath.Join(root, entry.Name(), "build.gradle")); err != nil {
 				return Project{}, err
-			} else if buildGradleKtsExists, err := pathutil.IsPathExists(filepath.Join(root, file.Name(), "build.gradle.kts")); err != nil {
+			} else if buildGradleKtsExists, err := pathutil.IsPathExists(filepath.Join(root, entry.Name(), "build.gradle.kts")); err != nil {
 				return Project{}, err
 			} else if buildGradleExists || buildGradleKtsExists {
 				projectsCount++
