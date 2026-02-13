@@ -62,7 +62,7 @@ func runStep(logger log.Logger) error {
 
 	logger.EnableDebugLog(config.IsDebug)
 
-	gradleProject, err := gradle.NewProject(config.ProjectLocation, cmdFactory)
+	gradleProject, err := gradle.NewProject(config.ProjectLocation, cmdFactory, logger)
 	if err != nil {
 		return fmt.Errorf("Process config: failed to open project, error: %s", err)
 	}

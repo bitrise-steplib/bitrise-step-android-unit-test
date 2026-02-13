@@ -1,4 +1,4 @@
-# github.com/bitrise-io/go-android/v2 v2.0.0-alpha.12
+# github.com/bitrise-io/go-android/v2 v2.0.0-alpha.12.0.20260213140409-f03ce0c659c4
 ## explicit; go 1.22
 github.com/bitrise-io/go-android/v2/gradle
 # github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.40
@@ -7,9 +7,7 @@ github.com/bitrise-io/go-steputils/v2/stepconf
 github.com/bitrise-io/go-steputils/v2/testquarantine
 # github.com/bitrise-io/go-utils v1.0.15
 ## explicit; go 1.13
-github.com/bitrise-io/go-utils/colorstring
 github.com/bitrise-io/go-utils/command
-github.com/bitrise-io/go-utils/log
 github.com/bitrise-io/go-utils/pathutil
 github.com/bitrise-io/go-utils/ziputil
 # github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.27

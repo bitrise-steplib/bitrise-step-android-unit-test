@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/v2/command"
+	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/ryanuber/go-glob"
 )
 
@@ -18,10 +18,11 @@ type Project struct {
 	location   string
 	monoRepo   bool
 	cmdFactory command.Factory
+	logger     log.Logger
 }
 
 // NewProject ...
-func NewProject(location string, cmdFactory command.Factory) (Project, error) {
+func NewProject(location string, cmdFactory command.Factory, logger log.Logger) (Project, error) {
 	var err error
 	location, err = filepath.Abs(location)
 	if err != nil {
@@ -66,15 +67,17 @@ func NewProject(location string, cmdFactory command.Factory) (Project, error) {
 		}
 	}
 
-	return Project{location: location, monoRepo: projectsCount > 1, cmdFactory: cmdFactory}, nil
+	return Project{
+		location:   location,
+		monoRepo:   projectsCount > 1,
+		cmdFactory: cmdFactory,
+		logger:     logger,
+	}, nil
 }
 
 // GetTask ...
 func (proj Project) GetTask(name string) *Task {
-	return &Task{
-		project: proj,
-		name:    name,
-	}
+	return NewTask(name, proj, proj.logger)
 }
 
 // FindArtifacts ...
@@ -82,7 +85,7 @@ func (proj Project) FindArtifacts(generatedAfter time.Time, pattern string, incl
 	var a []Artifact
 	return a, filepath.Walk(proj.location, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Warnf("failed to walk path: %s", err)
+			proj.logger.Warnf("failed to walk path: %s", err)
 			return nil
 		}
 
@@ -91,7 +94,7 @@ func (proj Project) FindArtifacts(generatedAfter time.Time, pattern string, incl
 		}
 
 		if info.ModTime().Before(generatedAfter) {
-			log.Warnf("Ignoring %s because it was created by a previous step based on the file modification time", info.Name())
+			proj.logger.Warnf("Ignoring %s because it was created by a previous step based on the file modification time", info.Name())
 			return nil
 		}
 
@@ -110,7 +113,7 @@ func (proj Project) FindDirs(generatedAfter time.Time, pattern string, includeMo
 	var a []Artifact
 	return a, filepath.Walk(proj.location, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Warnf("failed to walk path: %s", err)
+			proj.logger.Warnf("failed to walk path: %s", err)
 			return nil
 		}
 
