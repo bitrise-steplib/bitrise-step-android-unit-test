@@ -7,12 +7,23 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/go-utils/v2/command"
+	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 // Task ...
 type Task struct {
 	name    string
 	project Project
+	logger  log.Logger
+}
+
+// NewTask creates a new task
+func NewTask(name string, project Project, logger log.Logger) *Task {
+	return &Task{
+		name:    name,
+		project: project,
+		logger:  logger,
+	}
 }
 
 // GetVariants ...
@@ -20,10 +31,12 @@ func (task *Task) GetVariants(args ...string) (Variants, error) {
 	opts := command.Opts{Dir: task.project.location}
 	args = append([]string{"tasks", "--all", "--console=plain", "--quiet", "--no-build-cache", "--no-daemon"}, args...)
 	cmd := task.project.cmdFactory.Create(filepath.Join(task.project.location, "gradlew"), args, &opts)
+	task.logger.Debugf("$ %s", cmd.PrintableCommandArgs())
 	tasksOutput, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("%s, %s", tasksOutput, err)
 	}
+	task.logger.Debugf("%s", tasksOutput)
 	return task.parseVariants(tasksOutput), nil
 }
 

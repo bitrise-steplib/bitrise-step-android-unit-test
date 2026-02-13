@@ -3,7 +3,7 @@ module github.com/bitrise-steplib/bitrise-step-android-unit-test
 go 1.22
 
 require (
-	github.com/bitrise-io/go-android/v2 v2.0.0-alpha.12
+	github.com/bitrise-io/go-android/v2 v2.0.0-alpha.13
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.40
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.27
 	github.com/bitrise-steplib/steps-deploy-to-bitrise-io v0.0.0-20250728133502-5ac534b2874f
