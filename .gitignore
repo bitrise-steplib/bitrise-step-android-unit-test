@@ -2,3 +2,6 @@
 _tmp
 .idea/
 .env
+.DS_Store
+.gradle/
+bitrise-step-android-unit-test

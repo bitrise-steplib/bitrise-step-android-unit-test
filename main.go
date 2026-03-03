@@ -64,14 +64,14 @@ func runStep(logger log.Logger) error {
 
 	gradleProject, err := gradle.NewProject(config.ProjectLocation, cmdFactory, logger)
 	if err != nil {
-		return fmt.Errorf("Process config: failed to open project, error: %s", err)
+		return fmt.Errorf("Process config: failed to open project: %s", err)
 	}
 
 	testTask := gradleProject.GetTask("test")
 
 	args, err := shellquote.Split(config.Arguments)
 	if err != nil {
-		return fmt.Errorf("Process config: failed to parse arguments, error: %s", err)
+		return fmt.Errorf("Process config: failed to parse arguments: %s", err)
 	}
 
 	logger.Println()
@@ -79,12 +79,12 @@ func runStep(logger log.Logger) error {
 
 	variants, err := testTask.GetVariants(args...)
 	if err != nil {
-		return fmt.Errorf("Run: failed to fetch variants, error: %s", err)
+		return fmt.Errorf("Run: failed to fetch variants: %s", err)
 	}
 
 	filteredVariants, err := filterVariants(config.Module, config.Variant, variants)
 	if err != nil {
-		return fmt.Errorf("Run: failed to find buildable variants, error: %s", err)
+		return fmt.Errorf("Run: failed to find buildable variants: %s", err)
 	}
 
 	for module, variants := range variants {
@@ -100,7 +100,7 @@ func runStep(logger log.Logger) error {
 
 	testIdentifiers, err := parseQuarantinedTests(config.QuarantinedTests)
 	if err != nil {
-		return fmt.Errorf("Run: failed to parse quarantined tests, error: %s", err)
+		return fmt.Errorf("Run: failed to parse quarantined tests: %s", err)
 	}
 
 	var initScriptPth string
@@ -144,7 +144,7 @@ func runStep(logger log.Logger) error {
 
 	testErr = testCommand.Run()
 	if testErr != nil {
-		logger.Errorf("Run: test task failed, error: %v", testErr)
+		logger.Errorf("Run: test task failed: %v", testErr)
 	} else {
 		logger.Donef("Successful test run")
 	}
@@ -154,11 +154,11 @@ func runStep(logger log.Logger) error {
 
 	reports, err := getArtifacts(gradleProject, started, config.HTMLResultDirPattern, true, true, logger)
 	if err != nil {
-		return fmt.Errorf("Export outputs: failed to find reports, error: %v", err)
+		return fmt.Errorf("Export outputs: failed to find reports: %v", err)
 	}
 
 	if err := exporter.ExportArtifacts(config.DeployDir, reports); err != nil {
-		return fmt.Errorf("Export outputs: failed to export reports, error: %v", err)
+		return fmt.Errorf("Export outputs: failed to export reports: %v", err)
 	}
 
 	logger.Println()
@@ -167,11 +167,11 @@ func runStep(logger log.Logger) error {
 	// <project_dir>/app/build/test-results
 	results, err := getArtifacts(gradleProject, started, config.XMLResultDirPattern, true, true, logger)
 	if err != nil {
-		return fmt.Errorf("Export outputs: failed to find results, error: %v", err)
+		return fmt.Errorf("Export outputs: failed to find results: %v", err)
 	}
 
 	if err := exporter.ExportArtifacts(config.DeployDir, results); err != nil {
-		return fmt.Errorf("Export outputs: failed to export results, error: %v", err)
+		return fmt.Errorf("Export outputs: failed to export results: %v", err)
 	}
 
 	if config.TestResultDir != "" {
@@ -188,15 +188,15 @@ func runStep(logger log.Logger) error {
 		// - <project_dir>/app/build/test-results/testReleaseUnitTest/TEST-io.bitrise.kotlinresponsiveviewsactivity.UniTest.xml
 		resultXMLs, err := getArtifacts(gradleProject, started, xmlResultFilePattern, false, false, logger)
 		if err != nil {
-			logger.Warnf("Failed to find test XML test results, error: %s", err)
+			logger.Warnf("Failed to find test XML test results: %s", err)
 		} else {
 			exportedResultXMLs, err := exporter.ExportTestAddonArtifacts(config.TestResultDir, resultXMLs)
 			if err != nil {
-				logger.Warnf("Failed to export test XML test results, error: %s", err)
+				logger.Warnf("Failed to export test XML test results: %s", err)
 			}
 
 			if err := exporter.ExportFlakyTestsEnvVar(exportedResultXMLs); err != nil {
-				logger.Warnf("Failed to export flaky tests env var, error: %s", err)
+				logger.Warnf("Failed to export flaky tests env var: %s", err)
 			}
 		}
 	}
