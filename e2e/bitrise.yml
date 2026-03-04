@@ -16,7 +16,7 @@ workflows:
     - path::./:
         inputs:
         - is_debug: "true"
-        - arguments: --warn
+        - arguments: --debug
     - bundle::check-artifacts:
         inputs:
         - variant: Debug
