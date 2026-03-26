@@ -12,8 +12,8 @@ import (
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
-	"github.com/bitrise-steplib/steps-deploy-to-bitrise-io/test/converters/junitxml"
-	"github.com/bitrise-steplib/steps-deploy-to-bitrise-io/test/testreport"
+	"github.com/bitrise-io/go-android/v2/testresult/junitxml"
+	"github.com/bitrise-io/go-steputils/v2/testreport"
 )
 
 const (
