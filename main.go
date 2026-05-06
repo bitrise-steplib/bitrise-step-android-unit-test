@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/bitrise-io/bitrise-build-cache-cli/v2/pkg/reactnative/wrap"
 	"github.com/bitrise-io/go-android/v2/gradle"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
 	"github.com/bitrise-io/go-steputils/v2/testquarantine"
@@ -139,7 +142,32 @@ func runStep(logger log.Logger) error {
 
 	logger.Println()
 	logger.Infof("Run test:")
-	testCommand := testTask.GetCommand(filteredVariants, args...)
+
+	// Inline of testTask.GetCommand(filteredVariants, args...) so the gradlew
+	// path and argv are explicit — needed to route the invocation through
+	// `bitrise-build-cache react-native run -- ...` when RN cache is active.
+	gradlewPath := filepath.Join(config.ProjectLocation, "gradlew")
+	var taskNames []string
+	for module, variants := range filteredVariants {
+		modulePrefix := ""
+		if module != "" {
+			modulePrefix = ":" + module + ":"
+		}
+		for _, variant := range variants {
+			taskNames = append(taskNames, modulePrefix+"test"+variant)
+		}
+	}
+	gradleArgs := append(taskNames, args...)
+	det := wrap.Detect(context.Background(), wrap.DetectParams{Logger: logger})
+	if det.ReactNativeEnabled {
+		logger.Infof("Bitrise Build Cache: React Native cache active — wrapping gradle with %s", det.CLIPath)
+	}
+	name, wrappedArgs := wrap.Wrap(det, gradlewPath, gradleArgs)
+	testCommand := cmdFactory.Create(name, wrappedArgs, &command.Opts{
+		Dir:    config.ProjectLocation,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	})
 	logger.Donef("$ " + testCommand.PrintableCommandArgs())
 
 	testErr = testCommand.Run()
