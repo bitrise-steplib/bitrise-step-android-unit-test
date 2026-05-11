@@ -146,7 +146,14 @@ func runStep(logger log.Logger) error {
 	// Inline of testTask.GetCommand(filteredVariants, args...) so the gradlew
 	// path and argv are explicit — needed to route the invocation through
 	// `bitrise-build-cache react-native run -- ...` when RN cache is active.
-	gradlewPath := filepath.Join(config.ProjectLocation, "gradlew")
+	// Resolve gradlew to an absolute path: the command also sets Dir to the
+	// project location, and a relative gradlew name (e.g. "_tmp/gradlew")
+	// gets re-resolved relative to that Dir at exec time, producing
+	// "_tmp/_tmp/gradlew" and an ENOENT.
+	gradlewPath, err := filepath.Abs(filepath.Join(config.ProjectLocation, "gradlew"))
+	if err != nil {
+		return fmt.Errorf("resolve gradlew path: %v", err)
+	}
 	var taskNames []string
 	for module, variants := range filteredVariants {
 		modulePrefix := ""
