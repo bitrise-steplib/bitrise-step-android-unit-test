@@ -343,7 +343,7 @@ func applyTestSelection(filtered, all gradle.Variants, sel testSelectionResult, 
 	}
 	var extra []string
 	for module, task := range sel.modules {
-		if _, ok := all[module]; ok || task == "" {
+		if hasUnitTestVariant(all[module]) || task == "" {
 			continue
 		}
 		logger.Printf("%s: no unit test variant found, running %s", module, task)
@@ -351,6 +351,17 @@ func applyTestSelection(filtered, all gradle.Variants, sel testSelectionResult, 
 	}
 	sort.Strings(extra)
 	return kept, extra
+}
+
+// hasUnitTestVariant reports whether the module has a test<Variant>UnitTest task. A plain
+// JVM module only has tasks like testClasses, which the variant discovery also lists.
+func hasUnitTestVariant(variants []string) bool {
+	for _, v := range variants {
+		if strings.HasSuffix(v, "UnitTest") {
+			return true
+		}
+	}
+	return false
 }
 
 func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle.Variants, error) {
