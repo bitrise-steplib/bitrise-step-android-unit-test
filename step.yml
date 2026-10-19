@@ -8,6 +8,8 @@ description: |
   The Step also exports the screenshots, recordings and logs that belong to its test cases, so they show up under the test in the Test Reports. An attachment belongs to a test case if its file name follows the `<classname>__<name>[__run<k>]__<label>.<ext>` convention, for example `com.example.LoginTest__emptyState__1.png`.
 
   The Step looks for these files under the **Project Location**. Files tracked by git, such as committed reference images, are never exported.
+
+  If a test runs in more than one variant and the **Variant** input is empty, its attachments are linked to only one of the variants' test reports. To get them under each variant, run the Step once per variant with the **Variant** input set.
 website: https://github.com/bitrise-steplib/bitrise-step-android-unit-test
 source_code_url: https://github.com/bitrise-steplib/bitrise-step-android-unit-test
 support_url: https://github.com/bitrise-steplib/bitrise-step-android-unit-test/issues
