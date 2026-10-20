@@ -8,11 +8,14 @@ import (
 	"time"
 
 	"github.com/bitrise-io/go-android/v2/gradle"
+	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/env"
+	"github.com/bitrise-io/go-utils/v2/fileutil"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testaddon"
 	"github.com/bitrise-io/go-android/v2/testresult/junitxml"
+	"github.com/bitrise-io/go-steputils/v2/testattachment"
 	"github.com/bitrise-io/go-steputils/v2/testreport"
 )
 
@@ -23,23 +26,25 @@ const (
 
 type Exporter interface {
 	ExportArtifacts(deployDir string, artifacts []gradle.Artifact) error
-	ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact) ([]gradle.Artifact, error)
+	ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact, projectDir string) ([]gradle.Artifact, error)
 	ExportFlakyTestsEnvVar(artifacts []gradle.Artifact) error
 }
 
 type exporter struct {
-	envRepository env.Repository
-	pathChecker   pathutil.PathChecker
-	logger        log.Logger
-	converter     junitxml.Converter
+	envRepository       env.Repository
+	pathChecker         pathutil.PathChecker
+	logger              log.Logger
+	converter           junitxml.Converter
+	attachmentCollector testattachment.Collector
 }
 
 func NewExporter(envRepository env.Repository, pathChecker pathutil.PathChecker, logger log.Logger) Exporter {
 	return &exporter{
-		envRepository: envRepository,
-		pathChecker:   pathChecker,
-		logger:        logger,
-		converter:     junitxml.Converter{},
+		envRepository:       envRepository,
+		pathChecker:         pathChecker,
+		logger:              logger,
+		converter:           junitxml.Converter{},
+		attachmentCollector: testattachment.NewCollector(command.NewFactory(envRepository), fileutil.NewFileManager()),
 	}
 }
 
@@ -71,7 +76,7 @@ func (e exporter) ExportArtifacts(deployDir string, artifacts []gradle.Artifact)
 	return nil
 }
 
-func (e exporter) ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact) ([]gradle.Artifact, error) {
+func (e exporter) ExportTestAddonArtifacts(testDeployDir string, artifacts []gradle.Artifact, projectDir string) ([]gradle.Artifact, error) {
 	if len(artifacts) == 0 {
 		return nil, nil
 	}
@@ -79,16 +84,21 @@ func (e exporter) ExportTestAddonArtifacts(testDeployDir string, artifacts []gra
 	lastOtherDirIdx := -1
 	var exportErrs []error
 	var exportedArtifacts []gradle.Artifact
+	resultXMLsByReportDir := map[string][]string{}
 
 	for _, artifact := range artifacts {
+		var reportDir string
 		var err error
-		lastOtherDirIdx, err = testaddon.ExportTestAddonArtifact(artifact.Path, testDeployDir, lastOtherDirIdx, e.logger)
+		reportDir, lastOtherDirIdx, err = testaddon.ExportTestAddonArtifact(artifact.Path, testDeployDir, lastOtherDirIdx, e.logger)
 		if err != nil {
 			exportErrs = append(exportErrs, fmt.Errorf("failed to export test addon artifact (%s): %w", artifact.Path, err))
 		} else {
 			exportedArtifacts = append(exportedArtifacts, artifact)
+			resultXMLsByReportDir[reportDir] = append(resultXMLsByReportDir[reportDir], artifact.Path)
 		}
 	}
+
+	e.exportAttachments(testDeployDir, resultXMLsByReportDir, projectDir)
 
 	if len(exportErrs) > 0 {
 		errMsg := ""

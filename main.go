@@ -225,7 +225,7 @@ func runStep(logger log.Logger) error {
 		if err != nil {
 			logger.Warnf("Failed to find test XML test results: %s", err)
 		} else {
-			exportedResultXMLs, err := exporter.ExportTestAddonArtifacts(config.TestResultDir, resultXMLs)
+			exportedResultXMLs, err := exporter.ExportTestAddonArtifacts(config.TestResultDir, resultXMLs, config.ProjectLocation)
 			if err != nil {
 				logger.Warnf("Failed to export test XML test results: %s", err)
 			}

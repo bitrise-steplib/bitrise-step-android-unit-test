@@ -67,7 +67,7 @@ func Test_tryExportTestAddonArtifact(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := testaddon.ExportTestAddonArtifact(tt.artifactPth, tt.outputDir, tt.lastOtherDirIdx, logger)
+			_, got, err := testaddon.ExportTestAddonArtifact(tt.artifactPth, tt.outputDir, tt.lastOtherDirIdx, logger)
 			require.NoError(t, err)
 			if got != tt.wantIdx {
 				t.Errorf("tryExportTestAddonArtifact() = %v, want %v", got, tt.wantIdx)
