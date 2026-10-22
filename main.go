@@ -101,6 +101,8 @@ func runStep(logger log.Logger) error {
 		}
 	}
 
+	shadow := startTestSelectionShadow(config, filteredVariants, logger)
+
 	testIdentifiers, err := parseQuarantinedTests(config.QuarantinedTests)
 	if err != nil {
 		return fmt.Errorf("Run: failed to parse quarantined tests: %s", err)
@@ -177,7 +179,9 @@ func runStep(logger log.Logger) error {
 	})
 	logger.Donef("$ " + testCommand.PrintableCommandArgs())
 
+	testStarted := time.Now()
 	testErr = testCommand.Run()
+	finishTestSelectionShadow(shadow, config, filteredVariants, time.Since(testStarted), logger)
 	if testErr != nil {
 		logger.Errorf("Run: test task failed: %v", testErr)
 	} else {
