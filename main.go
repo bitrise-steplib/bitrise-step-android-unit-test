@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/gradleconfig"
 	"github.com/bitrise-steplib/bitrise-step-android-unit-test/output"
+	"github.com/bitrise-steplib/bitrise-step-android-unit-test/testselection"
 	"github.com/kballard/go-shellquote"
 )
 
@@ -34,6 +36,8 @@ type Configs struct {
 	// Debug
 	IsDebug          bool   `env:"is_debug,opt[true,false]"`
 	QuarantinedTests string `env:"quarantined_tests"`
+	TestSelection    string `env:"test_selection"`
+	OnEmptySelection string `env:"on_empty_selection"`
 	// Defaults
 	DeployDir     string `env:"BITRISE_DEPLOY_DIR"`
 	TestResultDir string `env:"BITRISE_TEST_RESULT_DIR"`
@@ -65,6 +69,16 @@ func runStep(logger log.Logger) error {
 
 	logger.EnableDebugLog(config.IsDebug)
 
+	selection, err := processTestSelection(config.TestSelection, config.OnEmptySelection, logger)
+	if err != nil {
+		return fmt.Errorf("Process config: %s", err)
+	}
+	if selection.skip {
+		logger.Println()
+		logger.Infof("Skipping the test run: %s", selection.reason)
+		return nil
+	}
+
 	gradleProject, err := gradle.NewProject(config.ProjectLocation, cmdFactory, logger)
 	if err != nil {
 		return fmt.Errorf("Process config: failed to open project: %s", err)
@@ -88,6 +102,16 @@ func runStep(logger log.Logger) error {
 	filteredVariants, err := filterVariants(config.Module, config.Variant, variants)
 	if err != nil {
 		return fmt.Errorf("Run: failed to find buildable variants: %s", err)
+	}
+
+	var extraTasks []string
+	if selection.modules != nil {
+		filteredVariants, extraTasks = applyTestSelection(filteredVariants, variants, selection, logger)
+		if len(filteredVariants) == 0 && len(extraTasks) == 0 {
+			logger.Println()
+			logger.Warnf("None of the selected modules has a unit test task in this project; nothing to run")
+			return nil
+		}
 	}
 
 	for module, variants := range variants {
@@ -164,6 +188,7 @@ func runStep(logger log.Logger) error {
 			taskNames = append(taskNames, modulePrefix+"test"+variant)
 		}
 	}
+	taskNames = append(taskNames, extraTasks...)
 	gradleArgs := append(taskNames, args...)
 	det := wrap.Detect(context.Background(), wrap.DetectParams{Logger: logger})
 	if det.ReactNativeEnabled {
@@ -265,6 +290,78 @@ func getArtifacts(gradleProject gradle.Project, started time.Time, pattern strin
 		}
 	}
 	return
+}
+
+type testSelectionResult struct {
+	skip   bool
+	reason string
+	// modules maps a selected Gradle project path without the leading colon to the task
+	// the Test Selection step suggested for it; nil when there is no selection.
+	modules map[string]string
+}
+
+func processTestSelection(path, onEmpty string, logger log.Logger) (testSelectionResult, error) {
+	sel, err := testselection.Load(path)
+	if err != nil {
+		return testSelectionResult{}, err
+	}
+	decision, err := testselection.Decide(sel, onEmpty, "gradle")
+	if err != nil {
+		return testSelectionResult{}, err
+	}
+	if sel == nil {
+		return testSelectionResult{}, nil
+	}
+
+	logger.Println()
+	logger.Infof("Test selection: %s", decision.Reason)
+	switch decision.Action {
+	case testselection.Skip:
+		return testSelectionResult{skip: true, reason: decision.Reason}, nil
+	case testselection.RunSelected:
+		modules := map[string]string{}
+		for _, t := range decision.Tests {
+			module := strings.TrimPrefix(t.Identifiers.GradleModule, ":")
+			logger.Printf("- %s (%s)", t.Identifiers.GradleModule, t.Reason)
+			modules[module] = t.Identifiers.GradleTask
+		}
+		return testSelectionResult{modules: modules}, nil
+	default:
+		return testSelectionResult{}, nil
+	}
+}
+
+// applyTestSelection keeps the unit test variants of the selected modules. A selected
+// module without unit test variants (a plain JVM module) runs the task the selection
+// suggested for it instead.
+func applyTestSelection(filtered, all gradle.Variants, sel testSelectionResult, logger log.Logger) (gradle.Variants, []string) {
+	kept := gradle.Variants{}
+	for module, variants := range filtered {
+		if _, ok := sel.modules[module]; ok {
+			kept[module] = variants
+		}
+	}
+	var extra []string
+	for module, task := range sel.modules {
+		if hasUnitTestVariant(all[module]) || task == "" {
+			continue
+		}
+		logger.Printf("%s: no unit test variant found, running %s", module, task)
+		extra = append(extra, task)
+	}
+	sort.Strings(extra)
+	return kept, extra
+}
+
+// hasUnitTestVariant reports whether the module has a test<Variant>UnitTest task. A plain
+// JVM module only has tasks like testClasses, which the variant discovery also lists.
+func hasUnitTestVariant(variants []string) bool {
+	for _, v := range variants {
+		if strings.HasSuffix(v, "UnitTest") {
+			return true
+		}
+	}
+	return false
 }
 
 func filterVariants(module, variant string, variantsMap gradle.Variants) (gradle.Variants, error) {
