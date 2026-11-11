@@ -37,6 +37,7 @@ type Test struct {
 	ID          string      `json:"id"`
 	Name        string      `json:"name"`
 	Ecosystem   string      `json:"ecosystem"`
+	Kind        string      `json:"kind"`
 	Selected    bool        `json:"selected"`
 	Reason      string      `json:"reason"`
 	Identifiers Identifiers `json:"identifiers"`
