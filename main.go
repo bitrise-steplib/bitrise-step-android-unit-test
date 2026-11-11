@@ -300,11 +300,28 @@ type testSelectionResult struct {
 	modules map[string]string
 }
 
+// dropUITests removes instrumented (androidTest) units, which this step does not run.
+// Otherwise a change that only reaches a module's instrumented tests would run that
+// module's unit tests.
+func dropUITests(sel *testselection.Selection) {
+	if sel == nil {
+		return
+	}
+	tests := sel.Tests[:0]
+	for _, t := range sel.Tests {
+		if t.Kind != "ui" {
+			tests = append(tests, t)
+		}
+	}
+	sel.Tests = tests
+}
+
 func processTestSelection(path, onEmpty string, logger log.Logger) (testSelectionResult, error) {
 	sel, err := testselection.Load(path)
 	if err != nil {
 		return testSelectionResult{}, err
 	}
+	dropUITests(sel)
 	decision, err := testselection.Decide(sel, onEmpty, "gradle")
 	if err != nil {
 		return testSelectionResult{}, err
